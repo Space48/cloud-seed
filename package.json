@@ -1,11 +1,15 @@
 {
-  "name": "s48-functions",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@space48/terraformer",
+  "version": "0.0.1",
+  "description": "The name is a work in progress...",
   "main": "index.js",
   "bin": {
-    "s48-functions": "dist/bin/entrypoint.js"
+    "s48-terraformer": "dist/bin/entrypoint.js"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": "https://github.com/Space48/s48-terraformer",
   "scripts": {
     "build": "rm -rf dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
