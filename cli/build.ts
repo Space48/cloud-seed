@@ -32,5 +32,5 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit(`> No such directory exists as the project root: ${dir}`)
   }
 
-  return build(dir);
+  return build(dir, false);
 }
