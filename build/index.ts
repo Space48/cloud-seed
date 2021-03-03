@@ -66,7 +66,7 @@ export default async (dir: string, debug: boolean) => {
     const functionNormalised = functionPath.replace(distDir + "/", "");
     const functionName = functionNormalised
       .replace(/\//g, "-")
-      .replace("index", "")
+      .replace("-index", "")
       .replace(".js", "");
     const functionDir = path.join(functionsOutDir, functionName);
 
