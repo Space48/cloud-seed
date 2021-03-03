@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { GcsBackend, TerraformHclModule, TerraformStack } from "cdktf";
-import { GoogleProvider, StorageBucket } from "../.gen/providers/google";
+import { GoogleProvider, StorageBucket, StorageBucketObject } from "../.gen/providers/google";
 import { DataArchiveFile } from "../.gen/providers/archive";
 import { resolve } from "path";
 import glob from "glob";
@@ -104,6 +104,12 @@ export default class GcpStack extends TerraformStack {
         sourceDir: functionDir,
       });
 
+      const object = new StorageBucketObject(this, manifest.name + "_storage_zip", {
+        bucket: bucket.name,
+        name: `${manifest.name}.zip`,
+        source: artifactPath,
+      })
+
       switch (manifest.type) {
         case "event":
           new TerraformHclModule(this, manifest.name + "-event", {
@@ -111,7 +117,8 @@ export default class GcpStack extends TerraformStack {
               "git@bitbucket.org:space48/terraform-modules.git//modules/subscription",
             variables: {
               bucket_name: bucket.name,
-              archive_object: archive.id,
+              archive_object: object.name,
+              hash: object.md5Hash,
               name: manifest.name,
               environment,
               topic_name: manifest.config.topicName,
@@ -124,7 +131,8 @@ export default class GcpStack extends TerraformStack {
               "git@bitbucket.org:space48/terraform-modules.git//modules/schedule-function",
             variables: {
               bucket_name: bucket.name,
-              archive_object: archive.id,
+              archive_object: object.name,
+              hash: object.md5Hash,
               schedule: manifest.config.schedule,
               name: manifest.name,
               environment,
@@ -137,7 +145,8 @@ export default class GcpStack extends TerraformStack {
               "git@bitbucket.org:space48/terraform-modules.git//modules/http-function",
             variables: {
               bucket_name: bucket.name,
-              archive_object: archive.id,
+              archive_object: object.name,
+              hash: object.md5Hash,
               name: manifest.name,
               environment,
             },
@@ -149,7 +158,8 @@ export default class GcpStack extends TerraformStack {
               "git@bitbucket.org:space48/terraform-modules.git//modules/firestore",
             variables: {
               bucket_name: bucket.name,
-              archive_object: archive.id,
+              archive_object: object.name,
+              hash: object.md5Hash,
               name: manifest.name,
               environment,
               collection_path: manifest.config.collection,
