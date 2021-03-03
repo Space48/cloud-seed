@@ -1,6 +1,6 @@
 {
   "name": "@space48/terraformer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The name is a work in progress...",
   "main": "index.js",
   "bin": {
@@ -11,6 +11,7 @@
   },
   "repository": "https://github.com/Space48/s48-terraformer",
   "scripts": {
+    "prepublishOnly": "npm build",
     "build": "rm -rf dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
