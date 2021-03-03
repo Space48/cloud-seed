@@ -9,6 +9,7 @@ export const cmdBuild: cliCommand = (argv) => {
   const validArgs: arg.Spec = {
     // Types
     '--help': Boolean,
+    '--project': String,
     // Aliases
     '-h': '--help',
   }
@@ -27,10 +28,14 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit("Help me", 0);
   }
 
+  if (!args['--project']) {
+    return printAndExit("--project must be set with the project name!", 1);
+  }
+
   const dir = resolve(args._[0] || '.');
   if (!existsSync(dir)) {
     return printAndExit(`> No such directory exists as the project root: ${dir}`)
   }
 
-  return build(dir, false);
+  return build(dir, args['--project'] as unknown as string, false);
 }

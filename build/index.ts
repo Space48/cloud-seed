@@ -8,7 +8,7 @@ import GcpStack from "../stacks/GcpStack";
 
 const writeFile = promisify(fs.writeFile);
 
-export default async (dir: string, debug: boolean) => {
+export default async (dir: string, project: string, debug: boolean) => {
   const buildDir = path.join(dir, ".build");
   const distDir = path.join(buildDir, "dist");
   const functionsOutDir = path.join(buildDir, "functions");
@@ -75,7 +75,7 @@ export default async (dir: string, debug: boolean) => {
 
     // Write config.json, a file that contains basic information about the function.
     const configContents = JSON.stringify(
-      { name: functionName, type, config },
+      { name: functionName, project, type, config },
       null,
       2
     );
@@ -116,7 +116,7 @@ export default async (dir: string, debug: boolean) => {
 
   const app = new App({ outdir: ".build" });
   // TODO: configure options
-  new GcpStack(app, "s48-cdk", {});
+  new GcpStack(app, project, {});
   app.synth();
 
   console.log("Success!");
