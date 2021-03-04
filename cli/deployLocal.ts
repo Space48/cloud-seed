@@ -31,7 +31,8 @@ export const cmdDeployLocal: cliCommand = (argv) => {
     return printAndExit("--name must be set with the name of the function!", 1);
   }
 
-  if (!args["--type"]) {
+  const allowedTypes = ["http", "event"];
+  if (!args["--type"] || !allowedTypes.includes((args["--type"] as unknown) as string)) {
     return printAndExit("--type must be = (http | event)", 1);
   }
 
