@@ -1,11 +1,22 @@
-
-export type RuntimeConfig = {
-  type: "http";
+export type HttpConfig = {
+  type: 'http'
   public: boolean;
-} | {
-  type: "event";
+}
+
+export type EventConfig = {
+  type: 'event'
   topicName: string;
-} | {
-  type: "schedule";
+}
+
+export type ScheduleConfig = {
+  type: 'schedule'
   schedule: string;
 }
+
+export type FirestoreConfig = {
+  type: 'firestore'
+  collection: string;
+  event?: "create" | "write" | "update" | "delete";
+}
+
+export type RuntimeConfig = HttpConfig | EventConfig | ScheduleConfig | FirestoreConfig;

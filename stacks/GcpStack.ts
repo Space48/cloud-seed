@@ -5,36 +5,26 @@ import { DataArchiveFile } from "../.gen/providers/archive";
 import { resolve } from "path";
 import glob from "glob";
 import fs from "fs";
-
-export type FunctionType = "http" | "schedule" | "event";
+import { ScheduleConfig, EventConfig, FirestoreConfig, HttpConfig } from "../runtime";
 
 export type Manifest = {
   name: string;
 } & (
   | {
       type: "schedule";
-      config: {
-        schedule: string;
-      };
+      config: Omit<ScheduleConfig, 'type'>;
     }
   | {
       type: "event";
-      config: {
-        topicName: string;
-      };
+      config: Omit<EventConfig, 'type'>;
     }
   | {
       type: "http";
-      config: {
-        public: boolean;
-      };
+      config: Omit<HttpConfig, 'type'>;
     }
   | {
       type: "firestore";
-      config: {
-        collection: string;
-        event?: "create" | "write" | "update" | "delete";
-      };
+      config: Omit<FirestoreConfig, 'type'>;
     }
 );
 
