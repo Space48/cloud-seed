@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import arg from "arg";
 
 export type cliCommand = (argv?: string[]) => void;

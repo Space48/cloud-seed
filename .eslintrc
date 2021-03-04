@@ -42,7 +42,8 @@
       }
     ],
     "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/no-floating-promises": "error"
+    "@typescript-eslint/no-floating-promises": "error",
+    "node/shebang": 0
   },
   "overrides": [
     {
