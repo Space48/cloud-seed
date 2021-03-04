@@ -28,5 +28,5 @@ export type FirestoreConfig = {
 export type GcpConfig = (
   HttpConfig | EventConfig | ScheduleConfig | FirestoreConfig
 ) & {
-  cloud: CloudServices.GCP
+  cloud: "gcp"
 };
