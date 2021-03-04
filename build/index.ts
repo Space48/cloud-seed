@@ -52,12 +52,21 @@ export default async (dir: string, project: string, debug: boolean) => {
       console.log();
     }
 
-    if (cloud === CloudServices.GCP) {
-      functions.push({
-        functionPath: maybeFunction,
-        type,
-        config,
-      });
+    switch (cloud) {
+      case CloudServices.GCP:
+        {
+          functions.push({
+            functionPath: maybeFunction,
+            type,
+            config,
+          });
+        }
+        break;
+      // TODO
+      case CloudServices.AWS:
+      case CloudServices.AZURE:
+      default:
+        break;
     }
   }
 

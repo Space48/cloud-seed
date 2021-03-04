@@ -1,6 +1,6 @@
 {
   "name": "@space48/terraformer",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "The name is a work in progress...",
   "main": "index.js",
   "bin": {
