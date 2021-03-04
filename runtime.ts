@@ -1,3 +1,9 @@
+export enum CloudServices {
+  GCP = "gcp",
+  AWS = "aws", 
+  AZURE = "azure",
+}
+
 export type HttpConfig = {
   type: "http";
   public: boolean;
@@ -19,4 +25,8 @@ export type FirestoreConfig = {
   event?: "create" | "write" | "update" | "delete";
 };
 
-export type RuntimeConfig = HttpConfig | EventConfig | ScheduleConfig | FirestoreConfig;
+export type GcpConfig = (
+  HttpConfig | EventConfig | ScheduleConfig | FirestoreConfig
+) & {
+  cloud: CloudServices.GCP
+};

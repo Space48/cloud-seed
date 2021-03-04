@@ -5,6 +5,7 @@ import fse from "fs-extra";
 import { promisify } from "util";
 import { App } from "cdktf";
 import GcpStack from "../stacks/GcpStack";
+import { CloudServices } from "../runtime";
 
 const writeFile = promisify(fs.writeFile);
 
@@ -41,20 +42,23 @@ export default async (dir: string, project: string, debug: boolean) => {
     if (!runtimeConfig) {
       continue;
     }
-    const { type, ...config } = runtimeConfig;
+    const { cloud, type, ...config } = runtimeConfig;
 
     if (debug) {
       console.log(`filename: ${maybeFunction.replace(distDir, "")}`);
+      console.log(`cloud service: ${cloud}`);
       console.log(`trigger: ${type}`);
       console.log(`config: ${JSON.stringify(config)}`);
       console.log();
     }
 
-    functions.push({
-      functionPath: maybeFunction,
-      type,
-      config,
-    });
+    if (cloud === CloudServices.GCP) {
+      functions.push({
+        functionPath: maybeFunction,
+        type,
+        config,
+      });
+    }
   }
 
   // Iterate over all deployable functions

@@ -27,7 +27,7 @@ Define your first cloud function:
 `src/myFirstFunction.ts`
 ```typescript
 import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
-import type { RuntimeConfig } from "@space48/terraformer/dist/runtime";
+import type { GcpConfig } from "@space48/terraformer/dist/runtime";
 
 const myFunction: HttpFunction = (req, res) => {
   console.log("Hello World");
@@ -36,7 +36,7 @@ const myFunction: HttpFunction = (req, res) => {
 
 export default myFunction;
 
-export const runtimeConfig: RuntimeConfig = {
+export const runtimeConfig: GcpConfig = {
   type: "http",
   public: true,
 };
@@ -68,7 +68,7 @@ The only thing you need to define for your function to work is the named export:
 
 ```typescript
 import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
-import type { RuntimeConfig } from "@space48/terraformer/dist/runtime";
+import type { GcpConfig } from "@space48/terraformer/dist/runtime";
 
 const myFunction: HttpFunction = (req, res) => {
   console.log("Hello World");
@@ -77,7 +77,7 @@ const myFunction: HttpFunction = (req, res) => {
 
 export default myFunction;
 
-export const runtimeConfig: RuntimeConfig = {
+export const runtimeConfig: GcpConfig = {
   type: "http",
   // Configure if the cloud function should be publically executable or not.
   public: true,
@@ -88,13 +88,13 @@ export const runtimeConfig: RuntimeConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { RuntimeConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/terraformer/dist/runtime";
 
 const fn: EventFunction (data) => {
   console.log("This is a event triggered function", data);
 };
 
-export const runtimeConfig: RuntimeConfig = {
+export const runtimeConfig: GcpConfig = {
   type: "event",
   // By defining the topicName it will create to the topic for you.
   topicName: "hello-world",
@@ -105,7 +105,7 @@ export const runtimeConfig: RuntimeConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { RuntimeConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/terraformer/dist/runtime";
 
 const fn: EventFunction = (data) => {
   console.log("This is a scheduled triggered function", data);
@@ -113,7 +113,7 @@ const fn: EventFunction = (data) => {
 
 export default fn;
 
-export const runtimeConfig: RuntimeConfig = {
+export const runtimeConfig: GcpConfig = {
   type: "schedule",
   schedule: "* * * * *",
 };
@@ -123,7 +123,7 @@ export const runtimeConfig: RuntimeConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { RuntimeConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/terraformer/dist/runtime";
 
 const fn: EventFunction = (data) => {
   console.log("This is a firestore triggered function", data);
@@ -131,7 +131,7 @@ const fn: EventFunction = (data) => {
 
 export default fn;
 
-export const runtimeConfig: RuntimeConfig = {
+export const runtimeConfig: GcpConfig = {
   type: "firestore",
   collection: "myCollection",
   // Optional event type (defaults to 'write').
