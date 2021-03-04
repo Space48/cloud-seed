@@ -1,6 +1,4 @@
 import arg from "arg";
-import { existsSync } from "fs";
-import { resolve } from "path";
 import { printAndExit } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
 import deployLocal from "../deployLocal";
