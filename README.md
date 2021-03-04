@@ -87,10 +87,11 @@ export const runtimeConfig: RuntimeConfig = {
 ### PubSub topic subscriptions:
 
 ```typescript
+import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
 import { RuntimeConfig } from "@space48/terraformer/dist/runtime";
 
-export default () => {
-  console.log("This is a event triggered function");
+const fn: EventFunction (data) => {
+  console.log("This is a event triggered function", data);
 };
 
 export const runtimeConfig: RuntimeConfig = {
