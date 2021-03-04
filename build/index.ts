@@ -21,7 +21,7 @@ export default async (dir: string, project: string, debug: boolean) => {
   const maybeFunctions = glob.sync(`${distDir}/**/*.js`);
   if (maybeFunctions.length === 0) {
     console.error(
-      "No functions found, please run: npm run build, or check you have defined functions in the src directory."
+      "No functions found, please run: npm run build, or check you have defined functions in the src directory.",
     );
   }
 
@@ -74,15 +74,8 @@ export default async (dir: string, project: string, debug: boolean) => {
     await fse.copy(".build/dist", functionDir, { overwrite: true });
 
     // Write config.json, a file that contains basic information about the function.
-    const configContents = JSON.stringify(
-      { name: functionName, project, type, config },
-      null,
-      2
-    );
-    await writeFile(
-      path.resolve(`${functionDir}/s48-manifest.json`),
-      configContents
-    );
+    const configContents = JSON.stringify({ name: functionName, project, type, config }, null, 2);
+    await writeFile(path.resolve(`${functionDir}/s48-manifest.json`), configContents);
 
     // Copy package.json and the package-lock.json or yarn.lock files into the functions dir.
     fs.copyFileSync("package.json", `${functionDir}/package.json`);
@@ -93,24 +86,16 @@ export default async (dir: string, project: string, debug: boolean) => {
       fs.copyFileSync("yarn.lock", `${functionDir}/yarn.lock`);
     }
 
-    const packageJsonContents = fs
-      .readFileSync(`${functionDir}/package.json`)
-      .toString();
+    const packageJsonContents = fs.readFileSync(`${functionDir}/package.json`).toString();
     const packageJson = JSON.parse(packageJsonContents);
-    packageJson.main = `./index.js`;
-    fs.writeFileSync(
-      `${functionDir}/package.json`,
-      JSON.stringify(packageJson, null, 2)
-    );
+    packageJson.main = "./index.js";
+    fs.writeFileSync(`${functionDir}/package.json`, JSON.stringify(packageJson, null, 2));
 
     // Write an index.js file to the project which imports just the function in question and exports it as default.
     // the default export will be what is invoked when the function is deployed.
     fs.writeFileSync(
       `${functionDir}/index.js`,
-      `exports.default = require('./${functionNormalised.replace(
-        ".js",
-        ""
-      )}').default`
+      `exports.default = require('./${functionNormalised.replace(".js", "")}').default`,
     );
   }
 

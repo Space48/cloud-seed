@@ -12,19 +12,19 @@ export type Manifest = {
 } & (
   | {
       type: "schedule";
-      config: Omit<ScheduleConfig, 'type'>;
+      config: Omit<ScheduleConfig, "type">;
     }
   | {
       type: "event";
-      config: Omit<EventConfig, 'type'>;
+      config: Omit<EventConfig, "type">;
     }
   | {
       type: "http";
-      config: Omit<HttpConfig, 'type'>;
+      config: Omit<HttpConfig, "type">;
     }
   | {
       type: "firestore";
-      config: Omit<FirestoreConfig, 'type'>;
+      config: Omit<FirestoreConfig, "type">;
     }
 );
 
@@ -49,14 +49,10 @@ export default class GcpStack extends TerraformStack {
   constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
     super(scope, name);
 
-    const {
-      functionsDir,
-      environment,
-      manifestName,
-      region,
-      backendBucket,
-      backendPrefix,
-    } = { ...defaultStackOptions, ...options };
+    const { functionsDir, environment, manifestName, region, backendBucket, backendPrefix } = {
+      ...defaultStackOptions,
+      ...options,
+    };
 
     // Configure the remote backend where state will be stored.
     new GcsBackend(this, {
@@ -65,7 +61,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     // Configure the Google Provider.
-    const provider = new GoogleProvider(this, "GoogleAuth", {
+    new GoogleProvider(this, "GoogleAuth", {
       region,
       project: name,
     });
@@ -84,11 +80,11 @@ export default class GcpStack extends TerraformStack {
       const functionDir = functions[index];
 
       const manifest: Manifest = JSON.parse(
-        fs.readFileSync(`${functionDir}/${manifestName}`).toString()
+        fs.readFileSync(`${functionDir}/${manifestName}`).toString(),
       );
 
       const artifactPath = `.build/artifacts/${manifest.name}.zip`;
-      const archive = new DataArchiveFile(this, manifest.name + "zip", {
+      new DataArchiveFile(this, manifest.name + "zip", {
         type: "zip",
         outputPath: artifactPath,
         sourceDir: functionDir,
@@ -98,13 +94,12 @@ export default class GcpStack extends TerraformStack {
         bucket: bucket.name,
         name: `${manifest.name}.zip`,
         source: artifactPath,
-      })
+      });
 
       switch (manifest.type) {
         case "event":
           new TerraformHclModule(this, manifest.name + "-event", {
-            source:
-              "git@bitbucket.org:space48/terraform-modules.git//modules/subscription",
+            source: "git@bitbucket.org:space48/terraform-modules.git//modules/subscription",
             variables: {
               bucket_name: bucket.name,
               archive_object: object.name,
@@ -117,8 +112,7 @@ export default class GcpStack extends TerraformStack {
           break;
         case "schedule":
           new TerraformHclModule(this, manifest.name + "-schedule", {
-            source:
-              "git@bitbucket.org:space48/terraform-modules.git//modules/schedule-function",
+            source: "git@bitbucket.org:space48/terraform-modules.git//modules/schedule-function",
             variables: {
               bucket_name: bucket.name,
               archive_object: object.name,
@@ -131,8 +125,7 @@ export default class GcpStack extends TerraformStack {
           break;
         case "http":
           new TerraformHclModule(this, manifest.name + "-http", {
-            source:
-              "git@bitbucket.org:space48/terraform-modules.git//modules/http-function",
+            source: "git@bitbucket.org:space48/terraform-modules.git//modules/http-function",
             variables: {
               bucket_name: bucket.name,
               archive_object: object.name,
@@ -144,8 +137,7 @@ export default class GcpStack extends TerraformStack {
           break;
         case "firestore":
           new TerraformHclModule(this, manifest.name + "-firestore", {
-            source:
-              "git@bitbucket.org:space48/terraform-modules.git//modules/firestore",
+            source: "git@bitbucket.org:space48/terraform-modules.git//modules/firestore",
             variables: {
               bucket_name: bucket.name,
               archive_object: object.name,
