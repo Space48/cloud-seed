@@ -1,5 +1,5 @@
 import arg from "arg";
-import { printAndExit } from "./utils";
+import { printAndExit, sanitiseInput } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
 import deployLocal from "../deployLocal";
 
@@ -36,5 +36,8 @@ export const cmdDeployLocal: cliCommand = (argv) => {
     return printAndExit("--type must be = (http | event)", 1);
   }
 
-  return deployLocal((args["--name"] as unknown) as string, (args["--type"] as unknown) as string);
+  return deployLocal(
+    sanitiseInput((args["--name"] as unknown) as string),
+    sanitiseInput((args["--type"] as unknown) as string),
+  );
 };
