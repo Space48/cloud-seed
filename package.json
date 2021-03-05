@@ -15,6 +15,7 @@
   "repository": "https://github.com/Space48/s48-terraformer",
   "scripts": {
     "prepublishOnly": "npm run build",
+    "prebuild": "cdktf get",
     "build": "rimraf dist && tsc",
     "lint": "eslint './**/*.ts' --fix",
     "lint:ci": "eslint './**/*.ts'",
