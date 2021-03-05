@@ -113,6 +113,7 @@ export default class GcpStack extends TerraformStack {
               name: manifest.name,
               environment,
               topic_name: manifest.config.topicName,
+              timeout: manifest.config.timeout,
             },
           });
           break;
@@ -126,6 +127,7 @@ export default class GcpStack extends TerraformStack {
               schedule: manifest.config.schedule,
               name: manifest.name,
               environment,
+              timeout: manifest.config.timeout,
             },
           });
           break;
@@ -138,6 +140,7 @@ export default class GcpStack extends TerraformStack {
               hash: object.md5Hash,
               name: manifest.name,
               environment,
+              timeout: manifest.config.timeout,
             },
           });
           break;
@@ -152,6 +155,7 @@ export default class GcpStack extends TerraformStack {
               environment,
               collection_path: manifest.config.collection,
               firestore_action: manifest.config.event ?? "create",
+              timeout: manifest.config.timeout,
             },
           });
           break;
