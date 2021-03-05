@@ -9,7 +9,7 @@ import { CloudServices } from "../runtime";
 
 const writeFile = promisify(fs.writeFile);
 
-export default async (dir: string, project: string, debug: boolean) => {
+export default async (dir: string, project: string, region: string, debug: boolean) => {
   const buildDir = path.join(dir, ".build");
   const distDir = path.join(buildDir, "dist");
   const functionsOutDir = path.join(buildDir, "functions");
@@ -113,8 +113,10 @@ export default async (dir: string, project: string, debug: boolean) => {
   }
 
   const app = new App({ outdir: ".build" });
-  // TODO: configure options
-  new GcpStack(app, project, {});
+  new GcpStack(app, project, {
+    environment: process.env.ENVIRONMENT,
+    region,
+  });
   app.synth();
 
   console.log("Success!");

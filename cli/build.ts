@@ -9,9 +9,13 @@ export const cmdBuild: cliCommand = (argv) => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
+    "--debug": Boolean,
     "--project": String,
+    "--region": String,
+
     // Aliases
     "-h": "--help",
+    "-d": "--debug",
   };
 
   let args: arg.Result<arg.Spec>;
@@ -25,7 +29,20 @@ export const cmdBuild: cliCommand = (argv) => {
   }
 
   if (args["--help"]) {
-    return printAndExit("Help me", 0);
+    return printAndExit(
+      `
+    Usage
+      $ s48-terraformer build <directory> [--options]
+    Options
+      --project=[name]  Set a project name
+      --region=[region] Set a valid region (defaults to europe-west2 for GCP)
+      --help, -h        Displays this message
+      --debug, -d       Outputs debug logging
+    For more information run a command with the --help flag
+      $ s48-terraformer build --help
+      `,
+      0,
+    );
   }
 
   if (!args["--project"]) {
@@ -37,5 +54,6 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit(`> No such directory exists as the project root: ${dir}`);
   }
 
-  return build(dir, (args["--project"] as unknown) as string, false);
+  const region = args["--region"] ?? "europe-west2";
+  return build(dir, (args["--project"] as unknown) as string, region, !!args["--debug"]);
 };
