@@ -9,8 +9,16 @@ import { CloudServices } from "../runtime";
 
 const writeFile = promisify(fs.writeFile);
 
-export default async (dir: string, project: string, region: string, debug: boolean) => {
-  const buildDir = path.join(dir, ".build");
+export type BuildOpts = {
+  dir: string;
+  project: string;
+  region: string;
+  debug: boolean;
+  environment: string;
+};
+
+export default async (options: BuildOpts) => {
+  const buildDir = path.join(options.dir, ".build");
   const distDir = path.join(buildDir, "dist");
   const functionsOutDir = path.join(buildDir, "functions");
 
@@ -26,7 +34,7 @@ export default async (dir: string, project: string, region: string, debug: boole
     );
   }
 
-  if (debug) {
+  if (options.debug) {
     console.log(`Detected ${maybeFunctions.length} functions...`);
     console.log();
   }
@@ -44,7 +52,7 @@ export default async (dir: string, project: string, region: string, debug: boole
     }
     const { cloud, type, ...config } = runtimeConfig;
 
-    if (debug) {
+    if (options.debug) {
       console.log(`filename: ${maybeFunction.replace(distDir, "")}`);
       console.log(`cloud service: ${cloud}`);
       console.log(`trigger: ${type}`);
@@ -87,7 +95,16 @@ export default async (dir: string, project: string, region: string, debug: boole
     await fse.copy(".build/dist", functionDir, { overwrite: true });
 
     // Write config.json, a file that contains basic information about the function.
-    const configContents = JSON.stringify({ name: functionName, project, type, config }, null, 2);
+    const configContents = JSON.stringify(
+      {
+        name: functionName,
+        project: options.project,
+        type,
+        config,
+      },
+      null,
+      2,
+    );
     await writeFile(path.resolve(`${functionDir}/s48-manifest.json`), configContents);
 
     // Copy package.json and the package-lock.json or yarn.lock files into the functions dir.
@@ -113,9 +130,9 @@ export default async (dir: string, project: string, region: string, debug: boole
   }
 
   const app = new App({ outdir: ".build" });
-  new GcpStack(app, project, {
-    environment: process.env.ENVIRONMENT,
-    region,
+  new GcpStack(app, options.project, {
+    environment: options.environment,
+    region: options.region,
   });
   app.synth();
 

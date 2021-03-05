@@ -12,6 +12,7 @@ export const cmdBuild: cliCommand = (argv) => {
     "--debug": Boolean,
     "--project": String,
     "--region": String,
+    "--env": String,
 
     // Aliases
     "-h": "--help",
@@ -36,6 +37,7 @@ export const cmdBuild: cliCommand = (argv) => {
     Options
       --project=[name]  Set a project name
       --region=[region] Set a valid region (defaults to europe-west2 for GCP)
+      --env=[env]       Set an environment eg: production, staging, dev, uat
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
@@ -55,5 +57,12 @@ export const cmdBuild: cliCommand = (argv) => {
   }
 
   const region = args["--region"] ?? "europe-west2";
-  return build(dir, (args["--project"] as unknown) as string, region, !!args["--debug"]);
+  const environment = args["--env"] ?? "dev";
+  return build({
+    dir,
+    project: (args["--project"] as unknown) as string,
+    region,
+    debug: !!args["--debug"],
+    environment,
+  });
 };
