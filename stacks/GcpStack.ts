@@ -1,6 +1,12 @@
 import { Construct } from "constructs";
 import { GcsBackend, TerraformHclModule, TerraformStack } from "cdktf";
-import { GoogleProvider, StorageBucket, StorageBucketObject } from "../.gen/providers/google";
+import {
+  GoogleProvider,
+  SecretManagerSecret,
+  SecretManagerSecretVersion,
+  StorageBucket,
+  StorageBucketObject,
+} from "../.gen/providers/google";
 import { DataArchiveFile } from "../.gen/providers/archive";
 import { resolve } from "path";
 import glob from "glob";
@@ -151,5 +157,35 @@ export default class GcpStack extends TerraformStack {
           break;
       }
     }
+
+    generateSecrets(this);
   }
+}
+
+/**
+ * Generate secrets manager secrets. These can then be access by application code.
+ * This expects an optional secrets.json file to exist in the root of the project.
+ * @param {Construct} scope
+ */
+function generateSecrets(scope: Construct) {
+  // Don't generate secrets if there isn't a secrets json file.
+  if (!fs.existsSync("./secrets.json")) {
+    return;
+  }
+  const secretsFile = JSON.parse(fs.readFileSync("./secrets.json").toString());
+  const secrets = Object.values(secretsFile);
+  secrets.forEach((secret) => {
+    if (typeof secret !== "string") {
+      return;
+    }
+    const gcpSecret = new SecretManagerSecret(scope, secret, {
+      secretId: secret,
+      replication: [{ automatic: true }],
+    });
+
+    new SecretManagerSecretVersion(scope, secret + "-version", {
+      secret: gcpSecret.id,
+      secretData: "INITIAL_VALUE",
+    });
+  });
 }
