@@ -1,10 +1,15 @@
-import glob from "glob";
+import fs from "fs";
 
 export default () => {
-  const paths = glob.sync(".build/functions/**/index.js");
-  const functions = paths.map(path => path
-    .replace(".build/functions/", "")
-    .replace(/\/index\.js/g, "")
-  );
-  functions.forEach(fn => console.log(fn));
+  let fns: string[];
+  try {
+    fns = fs.readdirSync(".build/functions");
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      fns = [];
+    } else {
+      throw e;
+    }
+  }
+  fns.forEach(console.log);
 }
