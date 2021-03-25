@@ -29,11 +29,11 @@
     "node/no-missing-import": [
       "error",
       {
-        "allowModules": [],
+        "allowModules": ["estree"],
         "tryExtensions": [".js", ".ts"]
       }
     ],
-    "node/no-unpublished-import": ["error", { "allowModules": ["@space48/terraformer"] }],
+    "node/no-unpublished-import": ["error", { "allowModules": ["estree"] }],
     "prettier/prettier": "error",
     "@typescript-eslint/no-inferrable-types": [
       "warn",
