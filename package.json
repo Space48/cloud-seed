@@ -7,7 +7,6 @@
     "s48-terraformer": "dist/bin/entrypoint.js"
   },
   "files": [
-    ".gen/**/*",
     "dist/**/*"
   ],
   "publishConfig": {
