@@ -49,6 +49,7 @@ const bundle = async (buildDir = ".build") => {
         commonjs(),
         // Creates unique package.json with external dependencies used in this function.
         generatePackageJson({
+          additionalDependencies: { tslib: "^2.1.0" },
           baseContents: () => ({
             name: func.functionName,
             main: "index.js",
