@@ -12,4 +12,4 @@ export default () => {
     }
   }
   fns.forEach(console.log);
-}
+};
