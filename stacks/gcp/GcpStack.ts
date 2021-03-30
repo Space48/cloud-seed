@@ -14,6 +14,7 @@ import {
   StorageBucketObject,
 } from "../../.gen/providers/google";
 import { DataArchiveFile } from "../../.gen/providers/archive";
+import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction, Manifest, FunctionTriggerConfig } from "./types";
 
@@ -53,6 +54,15 @@ export default class GcpStack extends TerraformStack {
     });
 
     const functions = this.getFunctions();
+
+    const hasWebhooks =
+      functions.filter((func) => func.type === "http" && func.webhook?.type === "bigcommerce")
+        .length > 0;
+
+    if (hasWebhooks) {
+      new BigcommerceProvider(this, "bigccommerce");
+    }
+
     functions.forEach((func) => this.generateFunction(func, bucket));
 
     this.generateSecrets();
@@ -78,7 +88,7 @@ export default class GcpStack extends TerraformStack {
       source: artifactPath,
     });
 
-    new CloudfunctionsFunction(this, manifest.name + "-http", {
+    const cloudFunc = new CloudfunctionsFunction(this, manifest.name + "-http", {
       name: manifest.name,
       runtime: manifest.config.runtime ?? "nodejs12",
       timeout: manifest.config.timeout,
@@ -93,13 +103,8 @@ export default class GcpStack extends TerraformStack {
       ...this.generateFunctionTriggerConfig(manifest),
     });
 
-    // Configure if the http function is publically invokable.
-    if (manifest.type === "http" && manifest.config.public) {
-      new CloudfunctionsFunctionIamMember(this, manifest.name + "-http-invoker", {
-        cloudFunction: manifest.name,
-        role: "roles/cloudfunctions.invoker",
-        member: "allUsers",
-      });
+    if (manifest.type === "http") {
+      this.configureHttpFunction(manifest, cloudFunc);
     }
 
     // Create pubsub topics if they don't exist already.
@@ -123,6 +128,32 @@ export default class GcpStack extends TerraformStack {
             topicName: scheduledTopic.name,
           },
         ],
+      });
+    }
+  }
+
+  configureHttpFunction(manifest: Manifest, cloudFunction: CloudfunctionsFunction) {
+    if (manifest.type !== "http") {
+      return;
+    }
+
+    // Configure if the http function is publically invokable.
+    if (manifest.config.public) {
+      new CloudfunctionsFunctionIamMember(this, manifest.name + "-http-invoker", {
+        cloudFunction: manifest.name,
+        role: "roles/cloudfunctions.invoker",
+        member: "allUsers",
+      });
+    }
+
+    // BigCommerce Webhook support.
+    if (manifest.config.webhook?.type === "bigcommerce") {
+      manifest.config.webhook.scopes.forEach((scope, index) => {
+        new Webhook(this, `${manifest.name}-webhook-${index}`, {
+          scope,
+          destination: cloudFunction.httpsTriggerUrl,
+          isActive: true,
+        });
       });
     }
   }
