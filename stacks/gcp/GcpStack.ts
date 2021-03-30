@@ -28,7 +28,7 @@ const defaultStackOptions: StackOptions = {
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
-  private projectId?: string;
+  private projectId: string;
   private existingTopics: string[] = [];
   constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
     super(scope, name);
@@ -60,7 +60,7 @@ export default class GcpStack extends TerraformStack {
         .length > 0;
 
     if (hasWebhooks) {
-      new BigcommerceProvider(this, "bigccommerce");
+      new BigcommerceProvider(this, "bigcommerce");
     }
 
     functions.forEach((func) => this.generateFunction(func, bucket));
@@ -76,7 +76,7 @@ export default class GcpStack extends TerraformStack {
     );
 
     const artifactPath = `.build/artifacts/${manifest.name}.zip`;
-    new DataArchiveFile(this, manifest.name + "zip", {
+    const archive = new DataArchiveFile(this, manifest.name + "zip", {
       type: "zip",
       outputPath: artifactPath,
       sourceDir: functionDir,
@@ -84,7 +84,7 @@ export default class GcpStack extends TerraformStack {
 
     const object = new StorageBucketObject(this, manifest.name + "_storage_zip", {
       bucket: bucket.name,
-      name: `${manifest.name}.zip`,
+      name: `${manifest.name}-${archive.outputMd5}.zip`,
       source: artifactPath,
     });
 
@@ -96,8 +96,8 @@ export default class GcpStack extends TerraformStack {
       sourceArchiveObject: object.name,
       availableMemoryMb: manifest.config.memory ?? 128,
       entryPoint: "default",
-      labels: {
-        "s48-hash": crypto.createHash("md5").update(object.md5Hash).digest("hex"),
+      environmentVariables: {
+        GCP_PROJECT: this.projectId,
       },
 
       ...this.generateFunctionTriggerConfig(manifest),
@@ -204,7 +204,7 @@ export default class GcpStack extends TerraformStack {
       }
 
       const gcpSecret = new SecretManagerSecret(this, secret, {
-        secretId: `${this.options.environment}/${secret}`,
+        secretId: secret,
         replication: [{ automatic: true }],
       });
 
