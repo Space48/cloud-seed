@@ -56,10 +56,12 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit(`> No such directory exists as the project root: ${dir}`);
   }
 
+  const outDir = resolve(args["--outDir"] || "./.build");
   const region = args["--region"] ?? "europe-west2";
   const environment = args["--env"] ?? "dev";
   return build({
     dir,
+    outDir,
     project: (args["--project"] as unknown) as string,
     region,
     debug: !!args["--debug"],
