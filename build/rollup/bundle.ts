@@ -61,7 +61,6 @@ const bundle = async (buildDir = ".build") => {
     });
 
     await functionRoller.write({
-      preserveModules: true,
       preserveModulesRoot: "src",
       format: "cjs",
       exports: "named",

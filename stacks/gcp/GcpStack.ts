@@ -95,7 +95,7 @@ export default class GcpStack extends TerraformStack {
 
     // Configure if the http function is publically invokable.
     if (manifest.type === "http" && manifest.config.public) {
-      new CloudfunctionsFunctionIamMember(this, manifest.name + "-http", {
+      new CloudfunctionsFunctionIamMember(this, manifest.name + "-http-invoker", {
         cloudFunction: manifest.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
