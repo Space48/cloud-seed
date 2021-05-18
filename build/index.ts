@@ -1,11 +1,12 @@
 import path from "path";
 import fs from "fs";
 import { App } from "cdktf";
-import GcpStack from "../stacks/GcpStack";
+import GcpStack from "../stacks/gcp/GcpStack";
 import bundle from "./rollup/bundle";
 
 export type BuildOpts = {
   dir: string;
+  outDir: string;
   project: string;
   region: string;
   debug: boolean;
@@ -25,7 +26,7 @@ export default async (options: BuildOpts) => {
   await bundle();
 
   // Generate stacks.
-  const app = new App({ outdir: ".build" });
+  const app = new App({ outdir: options.outDir });
   new GcpStack(app, options.project, {
     environment: options.environment,
     region: options.region,
