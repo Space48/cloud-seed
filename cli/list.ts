@@ -22,7 +22,16 @@ export const cmdList: cliCommand = (argv) => {
   }
 
   if (args["--help"]) {
-    return printAndExit("Help me", 0);
+    return printAndExit(
+      `
+    Usage
+      $ s48-terraformer list
+    Prints a list of built functions
+    For more information run a command with the --help flag
+      $ s48-terraformer list --help
+      `,
+      0,
+    );
   }
 
   return list();
