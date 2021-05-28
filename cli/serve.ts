@@ -31,13 +31,13 @@ export const cmdServe: cliCommand = (argv) => {
     return printAndExit(
       `
     Usage
-      $ s48-terraformer serve <name> [--options]
+      $ cloud-seed serve <name> [--options]
     Serves the function <name> on the local machine
     Options
       --port            Port to serve function on
       --help, -h        Displays this message
     For more information run a command with the --help flag
-      $ s48-terraformer serve --help
+      $ cloud-seed serve --help
       `,
       0,
     );

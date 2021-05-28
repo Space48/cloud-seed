@@ -6,14 +6,14 @@
 
 Add the package as a dev dependency (note you'll need to authenticate with github packages).
 ```
-npm install -D @space48/terraformer
+npm install -D @space48/cloud-seed
 ```
 
 Modify your build command in package.json:
 
 ```diff
 -  "build": "tsc"
-+  "build": "tsc && s48-terraformer build . --project=[your-project-name]"
++  "build": "tsc && cloud-seed build . --project=[your-project-name]"
 ```
 
 Modify your `tsconfig.json` to set the outDir to `.build/dist`:
@@ -27,7 +27,7 @@ Define your first cloud function:
 `src/myFirstFunction.ts`
 ```typescript
 import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { GcpConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/cloud-seed/dist/runtime";
 
 const myFunction: HttpFunction = (req, res) => {
   console.log("Hello World");
@@ -69,7 +69,7 @@ The only thing you need to define for your function to work is the named export:
 
 ```typescript
 import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
-import type { GcpConfig } from "@space48/terraformer/dist/runtime";
+import type { GcpConfig } from "@space48/cloud-seed/dist/runtime";
 
 const myFunction: HttpFunction = (req, res) => {
   console.log("Hello World");
@@ -90,7 +90,7 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { GcpConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/cloud-seed/dist/runtime";
 
 const fn: EventFunction (data) => {
   console.log("This is a event triggered function", data);
@@ -108,7 +108,7 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { GcpConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/cloud-seed/dist/runtime";
 
 const fn: EventFunction = (data) => {
   console.log("This is a scheduled triggered function", data);
@@ -127,7 +127,7 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { GcpConfig } from "@space48/terraformer/dist/runtime";
+import { GcpConfig } from "@space48/cloud-seed/dist/runtime";
 
 const fn: EventFunction = (data) => {
   console.log("This is a firestore triggered function", data);

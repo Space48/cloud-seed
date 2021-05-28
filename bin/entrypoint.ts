@@ -21,22 +21,22 @@ const args = arg(
   },
 );
 
-// Check if we are running `s48-terraformer <subcommand>` or `s48-terraformer`
+// Check if we are running `cloud-seed <subcommand>` or `cloud-seed`
 const foundCommand = Boolean(commands[args._[0]]);
 
-// Makes sure the `s48-terraformer --help` case is covered
-// This help message is only showed for `s48-terraformer --help` or `s48-terraformer`
-// `s48-terraformer <subcommand> --help` falls through to be handled later
+// Makes sure the `cloud-seed --help` case is covered
+// This help message is only showed for `cloud-seed --help` or `cloud-seed`
+// `cloud-seed <subcommand> --help` falls through to be handled later
 if (!foundCommand || (!foundCommand && args["--help"])) {
   console.log(`
     Usage
-      $ s48-terraformer <command>
+      $ cloud-seed <command>
     Available commands
       ${Object.keys(commands).join(", ")}
     Options
       --help, -h      Displays this message
     For more information run a command with the --help flag
-      $ s48-terraformer build --help
+      $ cloud-seed build --help
   `);
   process.exit(0);
 }
