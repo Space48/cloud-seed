@@ -33,7 +33,7 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit(
       `
     Usage
-      $ s48-terraformer build <directory> [--options]
+      $ cloud-seed build <directory> [--options]
     Options
       --project=[name]  Set a project name
       --region=[region] Set a valid region (defaults to europe-west2 for GCP)
@@ -41,7 +41,7 @@ export const cmdBuild: cliCommand = (argv) => {
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
-      $ s48-terraformer build --help
+      $ cloud-seed build --help
       `,
       0,
     );

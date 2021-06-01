@@ -25,10 +25,10 @@ export const cmdList: cliCommand = (argv) => {
     return printAndExit(
       `
     Usage
-      $ s48-terraformer list
+      $ cloud-seed list
     Prints a list of built functions
     For more information run a command with the --help flag
-      $ s48-terraformer list --help
+      $ cloud-seed list --help
       `,
       0,
     );
