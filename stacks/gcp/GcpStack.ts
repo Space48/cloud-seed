@@ -1,5 +1,4 @@
 import fs from "fs";
-import crypto from "crypto";
 import { Construct } from "constructs";
 import { GcsBackend, TerraformStack } from "cdktf";
 import {
@@ -16,11 +15,13 @@ import {
 import { DataArchiveFile } from "../../.gen/providers/archive";
 import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
-import { StackOptions, GcpFunction, Manifest, FunctionTriggerConfig } from "./types";
+import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
+
+// Name is always defined by the bundler, so mark as required.
+type RuntimeConfig = GcpConfig & { name: string };
 
 const defaultStackOptions: StackOptions = {
   functionsDir: ".build/functions",
-  manifestName: "s48-manifest.json",
   environment: "dev",
   region: "europe-west2",
   backendBucket: "s48-terraform-state",
@@ -69,60 +70,57 @@ export default class GcpStack extends TerraformStack {
   }
 
   generateFunction(func: GcpFunction, bucket: StorageBucket) {
-    const { functionsDir, manifestName } = this.options;
-    const functionDir = `${functionsDir}/${func.functionName}`;
-    const manifest: Manifest = JSON.parse(
-      fs.readFileSync(`${functionDir}/${manifestName}`).toString(),
-    );
+    const { functionsDir } = this.options;
+    const functionDir = `${functionsDir}/${func.name}`;
 
-    const artifactPath = `.build/artifacts/${manifest.name}.zip`;
-    const archive = new DataArchiveFile(this, manifest.name + "zip", {
+    const artifactPath = `.build/artifacts/${func.name}.zip`;
+    const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
       outputPath: artifactPath,
       sourceDir: functionDir,
     });
 
-    const object = new StorageBucketObject(this, manifest.name + "_storage_zip", {
+    const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
-      name: `${manifest.name}-${archive.outputMd5}.zip`,
+      name: `${func.name}-${archive.outputMd5}.zip`,
       source: artifactPath,
     });
 
-    const cloudFunc = new CloudfunctionsFunction(this, manifest.name + "-http", {
-      name: manifest.name,
-      runtime: manifest.config.runtime ?? "nodejs12",
-      timeout: manifest.config.timeout,
+    const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
+      name: func.name,
+      runtime: func.runtime ?? "nodejs12",
+      timeout: func.timeout,
       sourceArchiveBucket: bucket.name,
       sourceArchiveObject: object.name,
-      availableMemoryMb: manifest.config.memory ?? 128,
+      availableMemoryMb: func.memory ?? 128,
       entryPoint: "default",
       environmentVariables: {
         GCP_PROJECT: this.projectId,
       },
 
-      ...this.generateFunctionTriggerConfig(manifest),
+      ...this.generateFunctionTriggerConfig(func),
     });
 
-    if (manifest.type === "http") {
-      this.configureHttpFunction(manifest, cloudFunc);
+    if (func.type === "http") {
+      this.configureHttpFunction(func, cloudFunc);
     }
 
     // Create pubsub topics if they don't exist already.
-    if (manifest.type === "event" && !this.existingTopics.includes(manifest.config.topicName)) {
-      new PubsubTopic(this, manifest.config.topicName, {
-        name: manifest.config.topicName,
+    if (func.type === "event" && !this.existingTopics.includes(func.topicName)) {
+      new PubsubTopic(this, func.topicName, {
+        name: func.topicName,
       });
-      this.existingTopics.push(manifest.config.topicName);
+      this.existingTopics.push(func.topicName);
     }
 
     // Create cloud scheduler job + pubsub topic.
-    if (manifest.type === "schedule") {
-      const scheduledTopic = new PubsubTopic(this, manifest.name + "-schedule", {
-        name: "scheduled-" + manifest.name,
+    if (func.type === "schedule") {
+      const scheduledTopic = new PubsubTopic(this, func.name + "-schedule", {
+        name: "scheduled-" + func.name,
       });
-      new CloudSchedulerJob(this, manifest.name, {
-        name: manifest.name,
-        schedule: manifest.config.schedule,
+      new CloudSchedulerJob(this, func.name, {
+        name: func.name,
+        schedule: func.schedule,
         pubsubTarget: [
           {
             topicName: scheduledTopic.name,
@@ -132,24 +130,24 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  configureHttpFunction(manifest: Manifest, cloudFunction: CloudfunctionsFunction) {
-    if (manifest.type !== "http") {
+  configureHttpFunction(config: RuntimeConfig, cloudFunction: CloudfunctionsFunction) {
+    if (config.type !== "http") {
       return;
     }
 
     // Configure if the http function is publically invokable.
-    if (manifest.config.public) {
-      new CloudfunctionsFunctionIamMember(this, manifest.name + "-http-invoker", {
-        cloudFunction: manifest.name,
+    if (config.public) {
+      new CloudfunctionsFunctionIamMember(this, config.name + "-http-invoker", {
+        cloudFunction: config.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
       });
     }
 
     // BigCommerce Webhook support.
-    if (manifest.config.webhook?.type === "bigcommerce") {
-      manifest.config.webhook.scopes.forEach((scope, index) => {
-        new Webhook(this, `${manifest.name}-webhook-${index}`, {
+    if (config.webhook?.type === "bigcommerce") {
+      config.webhook.scopes.forEach((scope, index) => {
+        new Webhook(this, `${config.name}-webhook-${index}`, {
           scope,
           destination: cloudFunction.httpsTriggerUrl,
           isActive: true,
@@ -158,8 +156,8 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  generateFunctionTriggerConfig(manifest: Manifest): FunctionTriggerConfig {
-    if (manifest.type === "http") {
+  generateFunctionTriggerConfig(config: RuntimeConfig): FunctionTriggerConfig {
+    if (config.type === "http") {
       return {
         triggerHttp: true,
       };
@@ -167,17 +165,17 @@ export default class GcpStack extends TerraformStack {
 
     let eventType = "providers/cloud.pubsub/eventTypes/topic.publish";
     let resource: string;
-    switch (manifest.type) {
+    switch (config.type) {
       case "event":
-        resource = manifest.config.topicName;
+        resource = config.topicName;
         break;
       case "schedule":
-        resource = "scheduled-" + manifest.name;
+        resource = "scheduled-" + config.name;
         break;
       case "firestore":
-        const event = manifest.config.event ?? "write";
+        const event = config.event ?? "write";
         eventType = `providers/cloud.firestore/eventTypes/document.${event}`;
-        resource = `project/${this.projectId}/databases/(default)/documents/${manifest.config.collection}`;
+        resource = `project/${this.projectId}/databases/(default)/documents/${config.collection}`;
         break;
     }
 
@@ -215,8 +213,8 @@ export default class GcpStack extends TerraformStack {
     });
   }
 
-  getFunctions(): (GcpConfig & { functionPath: string; functionName: string })[] {
-    const contents = fs.readFileSync("./.build/compiled/functions.json");
+  getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
+    const contents = fs.readFileSync("./.build/functions.json");
     return JSON.parse(contents.toString());
   }
 }
