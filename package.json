@@ -14,7 +14,7 @@
   },
   "repository": "https://github.com/Space48/cloud-seed",
   "scripts": {
-    "aprebuild": "cdktf get",
+    "prebuild": "cdktf get",
     "prepublishOnly": "npm run build",
     "build": "rimraf dist && tsc",
     "lint": "eslint './**/*.ts' --fix",
