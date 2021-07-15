@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import { App } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
-import bundle from "./rollup/bundle";
+import bundle from "./esbuild/bundle";
 
 export type BuildOpts = {
   dir: string;
@@ -13,7 +13,7 @@ export type BuildOpts = {
   environment: string;
 };
 
-export default async (options: BuildOpts) => {
+export default (options: BuildOpts) => {
   const buildDir = path.join(options.dir, ".build");
   const functionsOutDir = path.join(buildDir, "functions");
 
@@ -22,8 +22,8 @@ export default async (options: BuildOpts) => {
   }
   fs.mkdirSync(functionsOutDir, { recursive: true });
 
-  // Run rollup bundler.
-  await bundle();
+  // Run bundler.
+  bundle();
 
   // Generate stacks.
   const app = new App({ outdir: options.outDir });
