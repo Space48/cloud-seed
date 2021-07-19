@@ -3,7 +3,7 @@ import fs from "fs";
 export default () => {
   let fns;
   try {
-    fns = JSON.parse(fs.readFileSync(".build/compiled/functions.json").toLocaleString());
+    fns = JSON.parse(fs.readFileSync(".build/functions.json").toLocaleString());
   } catch (e) {
     if (e.code === "ENOENT") {
       fns = {};
@@ -11,7 +11,5 @@ export default () => {
       throw e;
     }
   }
-  fns.forEach(({ functionName: name, type }: { functionName: string; type: string }) =>
-    console.log({ name, type }),
-  );
+  fns.forEach(({ name, type }: { name: string; type: string }) => console.log({ name, type }));
 };

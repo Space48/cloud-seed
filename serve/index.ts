@@ -1,16 +1,16 @@
 import { getServer, SignatureType } from "@google-cloud/functions-framework/build/src/invoker";
 import { resolve } from "path";
 import { readFileSync } from "fs";
+import { GcpConfig } from "../runtime";
 
-export default (buildDir: string, fnPath: string, port = 5000) => {
-  const path = resolve(buildDir + "/" + fnPath);
+export default (buildDir: string, fnConfig: GcpConfig, port = 5000) => {
+  const path = resolve(buildDir + "/" + fnConfig.name);
   const fn = require(path);
-  const manifest = JSON.parse(readFileSync(path + "/s48-manifest.json").toLocaleString());
-  const fnType = manifest.type === "http" ? SignatureType.HTTP : SignatureType.CLOUDEVENT;
+  const fnType = fnConfig.type === "http" ? SignatureType.HTTP : SignatureType.CLOUDEVENT;
   const server = getServer(fn.default, fnType);
   server.listen(port);
-  console.log(`> Server for ${fnPath} is now running on localhost:${port} 👍`);
-  if (manifest.type !== "http") {
+  console.log(`> Server for ${fnConfig.name} is now running on localhost:${port} 👍`);
+  if (fnType !== "http") {
     console.log(`
       You started a GCP CloudEvent function. You should have an appropriate emulator enabled.
       You can use :

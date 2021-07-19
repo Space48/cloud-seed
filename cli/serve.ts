@@ -1,8 +1,7 @@
 import arg from "arg";
 import { printAndExit } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
-import { existsSync } from "fs";
-import { resolve } from "path";
+import { readFileSync } from "fs";
 import serve from "../serve";
 
 const BUILD_DIR = "./.build/functions";
@@ -48,11 +47,22 @@ export const cmdServe: cliCommand = (argv) => {
   }
 
   const fnName = args._[0];
-  if (!existsSync(resolve(BUILD_DIR + "/" + fnName))) {
+  let manifest;
+  try {
+    manifest = readFileSync(BUILD_DIR + "/../functions.json").toLocaleString();
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      return printAndExit("> No build manifest detected. Did you run the build command first?");
+    } else {
+      throw e;
+    }
+  }
+  const fnConfig = JSON.parse(manifest).find(({ name }: { name: string }) => name === fnName);
+  if (!fnConfig) {
     return printAndExit(
       `> No such function exists: ${fnName}. Are you sure you ran the build command first?`,
     );
   }
 
-  return serve(BUILD_DIR, fnName, args["--port"]);
+  return serve(BUILD_DIR, fnConfig, args["--port"]);
 };
