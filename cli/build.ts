@@ -13,6 +13,7 @@ export const cmdBuild: cliCommand = (argv) => {
     "--project": String,
     "--region": String,
     "--env": String,
+    "--out-dir": String,
 
     // Aliases
     "-h": "--help",
@@ -38,6 +39,7 @@ export const cmdBuild: cliCommand = (argv) => {
       --project=[name]  Set a project name
       --region=[region] Set a valid region (defaults to europe-west2 for GCP)
       --env=[env]       Set an environment eg: production, staging, dev, uat
+      --out-dir=[dir]   Set the dir for the build files
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
@@ -51,12 +53,12 @@ export const cmdBuild: cliCommand = (argv) => {
     return printAndExit("--project must be set with the project name!", 1);
   }
 
-  const dir = resolve(args._[0] || ".");
-  if (!existsSync(dir)) {
+  const dir = args._[0] || ".";
+  if (!existsSync(resolve(dir))) {
     return printAndExit(`> No such directory exists as the project root: ${dir}`);
   }
 
-  const outDir = resolve(args["--outDir"] || "./.build");
+  const outDir = args["--out-dir"] ?? "./.build";
   const region = args["--region"] ?? "europe-west2";
   const environment = args["--env"] ?? "dev";
   return build({

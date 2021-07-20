@@ -16,6 +16,7 @@ import { DataArchiveFile } from "../../.gen/providers/archive";
 import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
+import path from "path";
 
 // Name is always defined by the bundler, so mark as required.
 type RuntimeConfig = GcpConfig & { name: string };
@@ -73,7 +74,7 @@ export default class GcpStack extends TerraformStack {
     const { functionsDir } = this.options;
     const functionDir = `${functionsDir}/${func.name}`;
 
-    const artifactPath = `.build/artifacts/${func.name}.zip`;
+    const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
       outputPath: artifactPath,
@@ -214,7 +215,7 @@ export default class GcpStack extends TerraformStack {
   }
 
   getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
-    const contents = fs.readFileSync("./.build/functions.json");
+    const contents = fs.readFileSync(path.join(this.options.functionsDir, "../functions.json"));
     return JSON.parse(contents.toString());
   }
 }

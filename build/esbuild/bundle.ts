@@ -1,10 +1,11 @@
-import * as ts from "typescript";
+import ts from "typescript";
 import { sync } from "glob";
 import { readFileSync, writeFileSync } from "fs";
 import * as esbuild from "esbuild";
+import path from "path";
 
-const bundle = () => {
-  const files = sync("src/**/*.ts");
+const bundle = (dir: string, outDir: string) => {
+  const files = sync(path.join(dir, "src/**/*.ts"));
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
@@ -28,13 +29,13 @@ const bundle = () => {
     }
   });
 
-  writeFileSync("./.build/functions.json", JSON.stringify(runtimeConfigs, null, 2));
+  writeFileSync(path.join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
   runtimeConfigs.forEach((config) => {
     esbuild.buildSync({
       entryPoints: [config.file],
       absWorkingDir: process.cwd(),
       format: "cjs",
-      outfile: `.build/functions/${config.name}/index.js`,
+      outfile: path.join(outDir, `functions/${config.name}/index.js`),
     });
   });
 };
