@@ -6,7 +6,7 @@ export default () => {
     fns = JSON.parse(fs.readFileSync(".build/functions.json").toLocaleString());
   } catch (e) {
     if (e.code === "ENOENT") {
-      fns = {};
+      fns = [];
     } else {
       throw e;
     }
