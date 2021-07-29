@@ -35,6 +35,7 @@ const bundle = (dir: string, outDir: string) => {
       entryPoints: [config.file],
       absWorkingDir: process.cwd(),
       format: "cjs",
+      bundle: true,
       outfile: path.join(outDir, `functions/${config.name}/index.js`),
     });
   });
