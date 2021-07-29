@@ -14,8 +14,7 @@ export type BuildOpts = {
 };
 
 export default (options: BuildOpts) => {
-  const buildDir = path.join(options.dir, ".build");
-  const functionsOutDir = path.join(buildDir, "functions");
+  const functionsOutDir = path.join(options.outDir, "functions");
 
   if (fs.existsSync(functionsOutDir)) {
     fs.rmdirSync(functionsOutDir, { recursive: true });
@@ -23,11 +22,12 @@ export default (options: BuildOpts) => {
   fs.mkdirSync(functionsOutDir, { recursive: true });
 
   // Run bundler.
-  bundle();
+  bundle(options.dir, options.outDir);
 
   // Generate stacks.
   const app = new App({ outdir: options.outDir });
   new GcpStack(app, options.project, {
+    functionsDir: functionsOutDir,
     environment: options.environment,
     region: options.region,
   });
