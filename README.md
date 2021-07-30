@@ -158,3 +158,14 @@ The values represent the name of the secret within GCP Secret Manager. The keys 
   someOtherSecret: "name-of-my-secret-in-gcp"
 }
 ```
+
+## Custom Environment Variables
+
+You can also specify custom runtime environment variables in an `env.json` file.
+
+```json
+{
+  GCP_PROJECT: "project-foo",
+  MY_CUSTOM_ENV_VAR: "var-value"
+}
+```
