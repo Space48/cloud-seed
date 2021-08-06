@@ -53,6 +53,7 @@ export default class GcpStack extends TerraformStack {
     // Creates a storage bucket for the functions to be uploaded to.
     const bucket = new StorageBucket(this, `${name}-functions`, {
       name: `${name}-functions`,
+      location: "EU",
     });
 
     const functions = this.getFunctions();
