@@ -48,7 +48,7 @@ function generateFunctionName(file: string) {
     .replace(/(src|index|function|\.ts)/g, "")
     .replace(/^\//, "")
     .replace(/\/$/, "")
-    .replace("/", "-");
+    .replace(/\//g, "-");
 }
 
 function detectRuntimeConfig(node: ts.Node) {
