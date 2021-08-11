@@ -78,14 +78,14 @@ export default class GcpStack extends TerraformStack {
     const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
-      outputPath: artifactPath,
-      sourceDir: functionDir,
+      outputPath: artifactPath.replace(".build/", ""),
+      sourceDir: functionDir.replace(".build/", ""),
     });
 
     const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
-      source: artifactPath,
+      source: artifactPath.replace(".build/", ""),
     });
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
