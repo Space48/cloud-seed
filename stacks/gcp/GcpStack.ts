@@ -126,6 +126,7 @@ export default class GcpStack extends TerraformStack {
         pubsubTarget: [
           {
             topicName: `projects/${this.projectId}/topics/${scheduledTopic.name}`,
+            data: "c2NoZWR1bGU=",
           },
         ],
       });
