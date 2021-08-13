@@ -125,7 +125,7 @@ export default class GcpStack extends TerraformStack {
         schedule: func.schedule,
         pubsubTarget: [
           {
-            topicName: scheduledTopic.name,
+            topicName: `projects/${this.projectId}/topics/${scheduledTopic.name}`,
           },
         ],
       });
