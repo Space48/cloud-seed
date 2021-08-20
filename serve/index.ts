@@ -1,6 +1,6 @@
-import { getServer, SignatureType } from "@google-cloud/functions-framework/build/src/invoker";
+import { getServer } from "@google-cloud/functions-framework/build/src/server";
+import { SignatureType } from "@google-cloud/functions-framework/build/src/types";
 import { resolve } from "path";
-import { readFileSync } from "fs";
 import { GcpConfig } from "../runtime";
 
 export default (buildDir: string, fnConfig: GcpConfig, port = 5000) => {
