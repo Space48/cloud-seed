@@ -146,17 +146,15 @@ export const runtimeConfig: GcpConfig = {
 
 ## Secrets Management
 
-In the root of your project you can define a `secrets.json` file which must be a key/value structure where the value is the name of the secret.
-
-The values represent the name of the secret within GCP Secret Manager. The keys within the JSON file do not matter (you could generate type definitions for usage as constants within your application code though).
+In the root of your project you can define a `secrets.json` file which must be an array of secret names (the name of the secret within GCP Secret Manager).
 
 > Note: No secret values should be contained in here! You need to configure secret values manually within GCP (either via the console or CLI).
 
 ```json
-{
-  bigCommerceAccessToken: "bigcommerce-access-token",
-  someOtherSecret: "name-of-my-secret-in-gcp"
-}
+[
+  "bigcommerce-access-token",
+  "name-of-my-secret-in-gcp"
+]
 ```
 
 ## Custom Environment Variables

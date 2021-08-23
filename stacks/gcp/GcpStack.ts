@@ -54,6 +54,7 @@ export default class GcpStack extends TerraformStack {
     // Creates a storage bucket for the functions to be uploaded to.
     const bucket = new StorageBucket(this, `${name}-functions`, {
       name: `${name}-functions`,
+      location: "EU",
     });
 
     const functions = this.getFunctions();
@@ -78,14 +79,14 @@ export default class GcpStack extends TerraformStack {
     const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
-      outputPath: artifactPath,
-      sourceDir: functionDir,
+      outputPath: artifactPath.replace(".build/", ""),
+      sourceDir: functionDir.replace(".build/", ""),
     });
 
     const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
-      source: artifactPath,
+      source: artifactPath.replace(".build/", ""),
     });
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
@@ -126,7 +127,8 @@ export default class GcpStack extends TerraformStack {
         schedule: func.schedule,
         pubsubTarget: [
           {
-            topicName: scheduledTopic.name,
+            topicName: `projects/${this.projectId}/topics/${scheduledTopic.name}`,
+            data: "c2NoZWR1bGU=",
           },
         ],
       });
@@ -197,8 +199,7 @@ export default class GcpStack extends TerraformStack {
       return;
     }
 
-    const secretsFile = JSON.parse(fs.readFileSync("./secrets.json").toString());
-    const secrets = Object.values(secretsFile);
+    const secrets = JSON.parse(fs.readFileSync("./secrets.json").toString()) as string[];
     secrets.forEach((secret) => {
       if (typeof secret !== "string") {
         return;

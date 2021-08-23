@@ -1,8 +1,8 @@
 {
   "name": "@space48/cloud-seed",
-  "version": "0.2.4",
+  "version": "0.2.12",
   "description": "Cloud infrastructure automation tool that uses Terraform CDK.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
     "cloud-seed": "dist/bin/entrypoint.js"
   },
@@ -27,7 +27,7 @@
   "author": "Ash Smith <ash@space48.com>",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/functions-framework": "^1.7.1",
+    "@google-cloud/functions-framework": "^1.9.0",
     "arg": "^5.0.0",
     "cdktf": "0.1.0",
     "cdktf-cli": "^0.1.0",
