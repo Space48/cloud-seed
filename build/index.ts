@@ -11,7 +11,6 @@ export type BuildOpts = {
   region: string;
   debug: boolean;
   environment: string;
-  envVars: Record<string, string>;
 };
 
 export default (options: BuildOpts) => {
@@ -31,7 +30,6 @@ export default (options: BuildOpts) => {
     functionsDir: functionsOutDir,
     environment: options.environment,
     region: options.region,
-    envVars: options.envVars,
   });
   app.synth();
 
