@@ -48,7 +48,10 @@ export default class GcpStack extends TerraformStack {
     });
 
     // Configure the Google Provider.
-    new GoogleProvider(this, "GoogleAuth", { region: this.options.region });
+    new GoogleProvider(this, "GoogleAuth", {
+      region: this.options.region,
+      project: this.projectId,
+    });
 
     // Creates a storage bucket for the functions to be uploaded to.
     const bucket = new StorageBucket(this, `${name}-functions`, {
