@@ -1,5 +1,5 @@
 import arg from "arg";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { printAndExit } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
@@ -61,6 +61,7 @@ export const cmdBuild: cliCommand = (argv) => {
   const outDir = args["--out-dir"] ?? "./.build";
   const region = args["--region"] ?? "europe-west2";
   const environment = args["--env"] ?? "dev";
+  const envVars = existsSync("./env.json") ? readFileSync("./env.json") : {};
   return build({
     dir,
     outDir,
@@ -68,5 +69,6 @@ export const cmdBuild: cliCommand = (argv) => {
     region,
     debug: !!args["--debug"],
     environment,
+    envVars,
   });
 };

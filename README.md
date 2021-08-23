@@ -156,3 +156,14 @@ In the root of your project you can define a `secrets.json` file which must be a
   "name-of-my-secret-in-gcp"
 ]
 ```
+
+## Custom Environment Variables
+
+You can also specify custom runtime environment variables in an `env.json` file.
+
+```json
+{
+  GCP_PROJECT: "project-foo",
+  MY_CUSTOM_ENV_VAR: "var-value"
+}
+```

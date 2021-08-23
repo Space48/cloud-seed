@@ -26,6 +26,7 @@ const defaultStackOptions: StackOptions = {
   environment: "dev",
   region: "europe-west2",
   backendBucket: "s48-terraform-state",
+  envVars: {},
 };
 
 export default class GcpStack extends TerraformStack {
@@ -98,6 +99,7 @@ export default class GcpStack extends TerraformStack {
       entryPoint: "default",
       environmentVariables: {
         GCP_PROJECT: this.projectId,
+        ...this.options.envVars,
       },
 
       ...this.generateFunctionTriggerConfig(func),
