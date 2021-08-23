@@ -197,8 +197,7 @@ export default class GcpStack extends TerraformStack {
       return;
     }
 
-    const secretsFile = JSON.parse(fs.readFileSync("./secrets.json").toString());
-    const secrets = Object.values(secretsFile);
+    const secrets = JSON.parse(fs.readFileSync("./secrets.json").toString()) as string[];
     secrets.forEach((secret) => {
       if (typeof secret !== "string") {
         return;
