@@ -26,7 +26,6 @@ const defaultStackOptions: StackOptions = {
   environment: "dev",
   region: "europe-west2",
   backendBucket: "s48-terraform-state",
-  envVars: {},
 };
 
 export default class GcpStack extends TerraformStack {
@@ -92,6 +91,10 @@ export default class GcpStack extends TerraformStack {
       source: artifactPath.replace(".build/", ""),
     });
 
+    const envVars = fs.existsSync("./env.json")
+      ? JSON.parse(fs.readFileSync("./env.json").toLocaleString())
+      : {};
+
     const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
       name: func.name,
       runtime: func.runtime ?? "nodejs12",
@@ -102,7 +105,7 @@ export default class GcpStack extends TerraformStack {
       entryPoint: "default",
       environmentVariables: {
         GCP_PROJECT: this.projectId,
-        ...this.options.envVars,
+        ...envVars,
       },
 
       ...this.generateFunctionTriggerConfig(func),
