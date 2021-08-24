@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { App } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
+import CustomStack from "../stacks/CustomStack";
 import bundle from "./esbuild/bundle";
 
 export type BuildOpts = {
@@ -13,7 +14,7 @@ export type BuildOpts = {
   environment: string;
 };
 
-export default (options: BuildOpts) => {
+export default async (options: BuildOpts) => {
   const functionsOutDir = path.join(options.outDir, "functions");
 
   if (fs.existsSync(functionsOutDir)) {
@@ -31,6 +32,26 @@ export default (options: BuildOpts) => {
     environment: options.environment,
     region: options.region,
   });
+
+  // Retrieve custom stacks:
+  const stacksOutDir = path.join(options.outDir, "custom-stacks");
+  const stacks = fs.readdirSync(stacksOutDir).filter((file) => file.endsWith(".js"));
+  const functions = JSON.parse(
+    fs.readFileSync(path.join(options.outDir, "functions.json")).toString(),
+  );
+
+  for (const stack in stacks) {
+    const Stack = (
+      await import(path.join(process.cwd(), stacksOutDir, stacks[stack].replace(".js", "")))
+    ).default as typeof CustomStack;
+    new Stack(app, `${options.project}-${stacks[stack].replace(".js", "")}`, {
+      ...options,
+      functionsDir: functionsOutDir,
+      functions,
+      backendBucket: "s48-terraform-state",
+    });
+  }
+
   app.synth();
 
   console.log("Success!");

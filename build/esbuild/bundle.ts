@@ -6,6 +6,7 @@ import path from "path";
 
 const bundle = (dir: string, outDir: string) => {
   const files = sync(path.join(dir, "src/**/*.ts"));
+  const stacks = sync(path.join(dir, "stacks/*.ts"));
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
@@ -38,6 +39,18 @@ const bundle = (dir: string, outDir: string) => {
       bundle: true,
       platform: "node",
       outfile: path.join(outDir, `functions/${config.name}/index.js`),
+    });
+  });
+
+  // Compile custom stacks.
+  stacks.forEach((stack) => {
+    esbuild.buildSync({
+      entryPoints: [stack],
+      absWorkingDir: process.cwd(),
+      format: "cjs",
+      bundle: true,
+      platform: "node",
+      outfile: path.join(outDir, `custom-stacks/${path.basename(stack, ".ts")}.js`),
     });
   });
 };
