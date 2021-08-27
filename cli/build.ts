@@ -61,6 +61,7 @@ export const cmdBuild: cliCommand = (argv) => {
   const outDir = args["--out-dir"] ?? "./.build";
   const region = args["--region"] ?? "europe-west2";
   const environment = args["--env"] ?? "dev";
+  const backend = args["--backend"];
   return build({
     dir,
     outDir,
@@ -68,5 +69,6 @@ export const cmdBuild: cliCommand = (argv) => {
     region,
     debug: !!args["--debug"],
     environment,
+    backend,
   });
 };

@@ -1,6 +1,6 @@
 import fs from "fs";
 import { Construct } from "constructs";
-import { GcsBackend, TerraformStack } from "cdktf";
+import { GcsBackend, LocalBackend, TerraformStack } from "cdktf";
 import {
   CloudfunctionsFunction,
   CloudfunctionsFunctionIamMember,
@@ -25,7 +25,6 @@ const defaultStackOptions: StackOptions = {
   functionsDir: ".build/functions",
   environment: "dev",
   region: "europe-west2",
-  backendBucket: "s48-terraform-state",
 };
 
 export default class GcpStack extends TerraformStack {
@@ -41,11 +40,17 @@ export default class GcpStack extends TerraformStack {
       ...options,
     };
 
-    // Configure the remote backend where state will be stored.
-    new GcsBackend(this, {
-      bucket: this.options.backendBucket,
-      prefix: this.options.backendPrefix,
-    });
+    // If bucket is defined,
+    // then configure the remote backend where state will be stored,
+    // else use a local backend.
+    this.options.backendBucket?.length
+      ? new GcsBackend(this, {
+          bucket: this.options.backendBucket,
+          prefix: this.options.backendPrefix,
+        })
+      : new LocalBackend(this, {
+          path: path.join(this.options.functionsDir + "../"),
+        });
 
     // Configure the Google Provider.
     new GoogleProvider(this, "GoogleAuth", {
