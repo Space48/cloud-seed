@@ -12,6 +12,7 @@ export type BuildOpts = {
   region: string;
   debug: boolean;
   environment: string;
+  backend?: string;
 };
 
 export default async (options: BuildOpts) => {
@@ -31,6 +32,7 @@ export default async (options: BuildOpts) => {
     functionsDir: functionsOutDir,
     environment: options.environment,
     region: options.region,
+    backendBucket: options.backend,
   });
 
   // Retrieve custom stacks:

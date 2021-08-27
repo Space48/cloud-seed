@@ -4,7 +4,7 @@ export type StackOptions = {
   functionsDir: string;
   environment: string;
   region: string;
-  backendBucket: string;
+  backendBucket?: string;
   backendPrefix?: string;
 };
 
