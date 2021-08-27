@@ -14,6 +14,7 @@ export const cmdBuild: cliCommand = (argv) => {
     "--region": String,
     "--env": String,
     "--out-dir": String,
+    "--backend": String,
 
     // Aliases
     "-h": "--help",
@@ -40,6 +41,7 @@ export const cmdBuild: cliCommand = (argv) => {
       --region=[region] Set a valid region (defaults to europe-west2 for GCP)
       --env=[env]       Set an environment eg: production, staging, dev, uat
       --out-dir=[dir]   Set the dir for the build files
+      --backend=[path]  Path to a remote backend Terraform state
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
