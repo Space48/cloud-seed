@@ -2,11 +2,19 @@ import { getServer } from "@google-cloud/functions-framework/build/src/server";
 import { SignatureType } from "@google-cloud/functions-framework/build/src/types";
 import { resolve } from "path";
 import { GcpConfig } from "../runtime";
+import { existsSync, readFileSync } from "fs";
 
-export default (buildDir: string, fnConfig: GcpConfig, port = 5000) => {
+export default (
+  buildDir: string,
+  fnConfig: GcpConfig,
+  projectId = "LOCAL",
+  env = "dev",
+  port = 5000,
+) => {
   const path = resolve(buildDir + "/" + fnConfig.name);
   const fn = require(path);
   const fnType = fnConfig.type === "http" ? SignatureType.HTTP : SignatureType.CLOUDEVENT;
+  applyLocalConfig(buildDir, projectId, env);
   const server = getServer(fn.default, fnType);
   server.listen(port);
   console.log(`> Server for ${fnConfig.name} is now running on localhost:${port} 👍`);
@@ -21,3 +29,13 @@ export default (buildDir: string, fnConfig: GcpConfig, port = 5000) => {
     `);
   }
 };
+
+function applyLocalConfig(buildDir: string, projectId: string, env: string): void {
+  const envs: Record<string, string> = existsSync(buildDir + "/" + "./env.json")
+    ? JSON.parse(readFileSync("./env.json").toLocaleString())?.[env] ?? {}
+    : {};
+  process.env.GCP_PROJECT = projectId;
+  for (const k in envs) {
+    process.env[k] = envs[k];
+  }
+}

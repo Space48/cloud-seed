@@ -97,7 +97,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     const envVars = fs.existsSync("./env.json")
-      ? JSON.parse(fs.readFileSync("./env.json").toLocaleString())
+      ? JSON.parse(fs.readFileSync("./env.json").toLocaleString())?.[this.options.environment] ?? {}
       : {};
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
@@ -109,6 +109,7 @@ export default class GcpStack extends TerraformStack {
       availableMemoryMb: func.memory ?? 128,
       entryPoint: "default",
       environmentVariables: {
+        NODE_ENV: this.options.environment,
         GCP_PROJECT: this.projectId,
         ...envVars,
       },

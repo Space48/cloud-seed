@@ -159,11 +159,19 @@ In the root of your project you can define a `secrets.json` file which must be a
 
 ## Custom Environment Variables
 
-You can also specify custom runtime environment variables in an `env.json` file.
+You can also specify custom runtime environment variables in an `env.json` file. Add a key for each environment, and then add all its variables as an object.
 
 ```json
 {
-  GCP_PROJECT: "project-foo",
-  MY_CUSTOM_ENV_VAR: "var-value"
+  "dev": {
+    "GCP_PROJECT": "project-foo",
+    "MY_DEV_ENV_VAR": "var-value"
+  },
+  "staging": {
+    "MY_CUSTOM_ENV_VAR": "var-value2"
+  },
+  "production": {
+    "MY_CUSTOM_ENV_VAR": "var-value3"
+  }
 }
 ```

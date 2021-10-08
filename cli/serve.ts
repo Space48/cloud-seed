@@ -33,7 +33,8 @@ export const cmdServe: cliCommand = (argv) => {
       $ cloud-seed serve <name> [--options]
     Serves the function <name> on the local machine
     Options
-      --port            Port to serve function on
+      --port=[port]     Port to serve function on
+      --env=[env]       Set the environment eg: production, staging, dev, uat
       --help, -h        Displays this message
     For more information run a command with the --help flag
       $ cloud-seed serve --help
@@ -64,5 +65,19 @@ export const cmdServe: cliCommand = (argv) => {
     );
   }
 
-  return serve(BUILD_DIR, fnConfig, args["--port"]);
+  let cdktf;
+  try {
+    cdktf = readFileSync(BUILD_DIR + "/../cdk.tf.json").toLocaleString();
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      return printAndExit("> No CDKTF config detected. Did you run the build command first?");
+    } else {
+      throw e;
+    }
+  }
+  const projectId = JSON.parse(cdktf)?.provider?.google?.find(
+    ({ project }: { project: string }) => project?.length,
+  ).project;
+
+  return serve(BUILD_DIR, fnConfig, projectId, args["--env"], args["--port"]);
 };
