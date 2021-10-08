@@ -10,6 +10,7 @@ export const cmdServe: cliCommand = (argv) => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
+    "--env": String,
     "--port": Number,
 
     // Aliases

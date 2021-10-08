@@ -11,10 +11,10 @@ export default (
   env = "dev",
   port = 5000,
 ) => {
+  applyLocalConfig(projectId, env);
   const path = resolve(buildDir + "/" + fnConfig.name);
   const fn = require(path);
   const fnType = fnConfig.type === "http" ? SignatureType.HTTP : SignatureType.CLOUDEVENT;
-  applyLocalConfig(buildDir, projectId, env);
   const server = getServer(fn.default, fnType);
   server.listen(port);
   console.log(`> Server for ${fnConfig.name} is now running on localhost:${port} 👍`);
@@ -30,11 +30,12 @@ export default (
   }
 };
 
-function applyLocalConfig(buildDir: string, projectId: string, env: string): void {
-  const envs: Record<string, string> = existsSync(buildDir + "/" + "./env.json")
+function applyLocalConfig(projectId: string, env: string): void {
+  const envs: Record<string, string> = existsSync("./env.json")
     ? JSON.parse(readFileSync("./env.json").toLocaleString())?.[env] ?? {}
     : {};
   process.env.GCP_PROJECT = projectId;
+  process.env.NODE_ENV = env;
   for (const k in envs) {
     process.env[k] = envs[k];
   }
