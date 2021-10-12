@@ -57,4 +57,5 @@ More information, see:
 - [Creating PubSub Topics and Subscriptions](./pubsub.md)
 - [Creating Scheduled Functions](./scheduled.md)
 - [Creating Firestore triggered Functions](./firestore.md)
+- [Creating Cloud Storage triggered Functions](./storage.md)
 - [Creating Secrets](./secrets.md)

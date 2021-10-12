@@ -37,7 +37,19 @@ export type FirestoreConfig = {
   event?: "create" | "write" | "update" | "delete";
 } & FunctionConfig;
 
-export type GcpConfig = (HttpConfig | EventConfig | ScheduleConfig | FirestoreConfig) & {
+export type StorageConfig = {
+  type: "storage";
+  bucket: string;
+  event?: "finalize" | "delete" | "archive" | "metadataUpdate";
+} & FunctionConfig;
+
+export type GcpConfig = (
+  | HttpConfig
+  | EventConfig
+  | ScheduleConfig
+  | FirestoreConfig
+  | StorageConfig
+) & {
   cloud: "gcp";
   name?: string;
 };
