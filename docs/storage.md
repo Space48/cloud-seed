@@ -25,6 +25,6 @@ export const runtimeConfig: GcpConfig = {
   type: "storage",
   bucket: "myBucket",
   // Optional event type (defaults to 'finalize').
-  event: "finalize"
+  storageEvent: "finalize"
 };
 ```

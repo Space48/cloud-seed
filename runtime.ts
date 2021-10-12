@@ -34,13 +34,13 @@ export type ScheduleConfig = {
 export type FirestoreConfig = {
   type: "firestore";
   collection: string;
-  event?: "create" | "write" | "update" | "delete";
+  firestoreEvent?: "create" | "write" | "update" | "delete";
 } & FunctionConfig;
 
 export type StorageConfig = {
   type: "storage";
   bucket: string;
-  event?: "finalize" | "delete" | "archive" | "metadataUpdate";
+  storageEvent?: "finalize" | "delete" | "archive" | "metadataUpdate";
 } & FunctionConfig;
 
 export type GcpConfig = (

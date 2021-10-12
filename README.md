@@ -140,7 +140,28 @@ export const runtimeConfig: GcpConfig = {
   type: "firestore",
   collection: "myCollection",
   // Optional event type (defaults to 'write').
-  event: "create"
+  firestoreEvent: "create"
+};
+```
+
+### Cloud Storage triggers
+
+```typescript
+import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { GcpConfig } from "@space48/cloud-seed";
+
+const fn: EventFunction = (data) => {
+  console.log("This is a cloud storage triggered function", data);
+};
+
+export default fn;
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  type: "storage",
+  bucket: "myBucket",
+  // Optional event type (defaults to 'finalize').
+  storageEvent: "finalize"
 };
 ```
 

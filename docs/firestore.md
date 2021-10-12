@@ -25,6 +25,6 @@ export const runtimeConfig: GcpConfig = {
   type: "firestore",
   collection: "myCollection",
   // Optional event type (defaults to 'write').
-  event: "create"
+  firestoreEvent: "create"
 };
 ```

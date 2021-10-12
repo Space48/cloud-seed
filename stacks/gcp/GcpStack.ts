@@ -190,11 +190,13 @@ export default class GcpStack extends TerraformStack {
         resource = "scheduled-" + config.name;
         break;
       case "firestore":
-        eventType = `providers/cloud.firestore/eventTypes/document.${config.event ?? "write"}`;
+        eventType = `providers/cloud.firestore/eventTypes/document.${
+          config.firestoreEvent ?? "write"
+        }`;
         resource = `project/${this.projectId}/databases/(default)/documents/${config.collection}`;
         break;
       case "storage":
-        eventType = `google.storage.object.${config.event ?? "finalize"}`;
+        eventType = `google.storage.object.${config.storageEvent ?? "finalize"}`;
         resource = config.bucket;
         break;
     }
