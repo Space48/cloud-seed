@@ -17,9 +17,9 @@
     "prebuild": "rimraf .gen && cdktf get",
     "prepublishOnly": "npm run build",
     "build": "rimraf dist && tsc",
-    "lint": "eslint './**/*.ts' --fix",
+    "lint": "eslint --fix './**/*.ts'",
     "lint:ci": "eslint './**/*.ts'",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests --coverage"
   },
   "engines": {
     "node": "14.x.x"
