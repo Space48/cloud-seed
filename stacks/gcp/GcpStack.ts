@@ -68,14 +68,14 @@ export default class GcpStack extends TerraformStack {
     const functions = this.getFunctions();
 
     const hasWebhooks =
-      functions.filter((func) => func.type === "http" && func.webhook?.type === "bigcommerce")
+      functions.filter(func => func.type === "http" && func.webhook?.type === "bigcommerce")
         .length > 0;
 
     if (hasWebhooks) {
       new BigcommerceProvider(this, "bigcommerce");
     }
 
-    functions.forEach((func) => this.generateFunction(func, bucket));
+    functions.forEach(func => this.generateFunction(func, bucket));
 
     this.generateSecrets();
   }
@@ -87,14 +87,14 @@ export default class GcpStack extends TerraformStack {
     const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
-      outputPath: artifactPath.replace(".build/", ""),
-      sourceDir: functionDir.replace(".build/", ""),
+      outputPath: artifactPath.replace(/^.*\/\.build\//, ""),
+      sourceDir: functionDir.replace(/^.*\/\.build\//, ""),
     });
 
     const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
-      source: artifactPath.replace(".build/", ""),
+      source: artifactPath.replace(/^.*\/\.build\//, ""),
     });
 
     const envVars = fs.existsSync("./env.json")
@@ -226,7 +226,7 @@ export default class GcpStack extends TerraformStack {
     }
 
     const secrets = JSON.parse(fs.readFileSync("./secrets.json").toString()) as string[];
-    secrets.forEach((secret) => {
+    secrets.forEach(secret => {
       if (typeof secret !== "string") {
         return;
       }
