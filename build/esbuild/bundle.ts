@@ -47,10 +47,14 @@ export default bundle;
 
 function generateFunctionName(file: string) {
   return file
-    .replace(/(src|index|function|\.ts)/g, "")
+    .replace(/(src|index|functions|function|\.ts)/g, "")
     .replace(/^\//, "")
     .replace(/\/$/, "")
-    .replace(/\//g, "-");
+    .replace(/[\/]{2,}/g, "/")
+    .replace(/\//g, "-")
+    .replace(/[-_]{2,}/g, "-")
+    .replace(/^[-_]+/, "")
+    .replace(/[-_]+$/, "");
 }
 
 function detectRuntimeConfig(node: ts.Node) {
