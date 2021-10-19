@@ -12,6 +12,7 @@ export type BuildOpts = {
   debug: boolean;
   environment: string;
   backend?: string;
+  tsconfig?: string;
 };
 
 export default (options: BuildOpts) => {
@@ -23,7 +24,7 @@ export default (options: BuildOpts) => {
   fs.mkdirSync(functionsOutDir, { recursive: true });
 
   // Run bundler.
-  bundle(options.dir, options.outDir);
+  bundle(options.dir, options.outDir, options.tsconfig);
 
   // Generate stacks.
   const app = new App({ outdir: options.outDir });

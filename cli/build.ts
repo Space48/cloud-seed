@@ -15,6 +15,7 @@ export const cmdBuild: cliCommand = (argv) => {
     "--env": String,
     "--out-dir": String,
     "--backend": String,
+    "--tsconfig": String,
 
     // Aliases
     "-h": "--help",
@@ -42,6 +43,7 @@ export const cmdBuild: cliCommand = (argv) => {
       --env=[env]       Set an environment eg: production, staging, dev, uat
       --out-dir=[dir]   Set the dir for the build files
       --backend=[path]  Path to a remote backend Terraform state
+      --tsconfig=[path] Custom tsconfig path
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
@@ -64,13 +66,15 @@ export const cmdBuild: cliCommand = (argv) => {
   const region = args["--region"] ?? "europe-west2";
   const environment = args["--env"] ?? "dev";
   const backend = args["--backend"];
+  const tsconfig = args["--tsconfig"];
   return build({
     dir,
     outDir,
-    project: (args["--project"] as unknown) as string,
+    project: args["--project"] as unknown as string,
     region,
     debug: !!args["--debug"],
     environment,
     backend,
+    tsconfig,
   });
 };
