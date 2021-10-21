@@ -103,11 +103,11 @@ export default class GcpStack extends TerraformStack {
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
       name: func.name,
-      runtime: func.runtime ?? "nodejs12",
-      timeout: func.timeout,
+      runtime: func.runtime ?? "nodejs14",
+      timeout: func.timeout ?? 60,
       sourceArchiveBucket: bucket.name,
       sourceArchiveObject: object.name,
-      availableMemoryMb: func.memory ?? 128,
+      availableMemoryMb: func.memory ?? 256,
       entryPoint: "default",
       environmentVariables: {
         NODE_ENV: this.options.environment,
@@ -238,7 +238,7 @@ export default class GcpStack extends TerraformStack {
 
       new SecretManagerSecretVersion(this, secret + "-version", {
         secret: gcpSecret.id,
-        secretData: "INITIAL_VALUE",
+        secretData: "INITIAL_VALUE_DO_NOT_DELETE",
       });
     });
   }
