@@ -9,15 +9,14 @@ import {
   ComputeNetwork,
   ComputeRouter,
   ComputeRouterNat,
-  ComputeSubnetwork,
   GoogleProvider,
   PubsubTopic,
   SecretManagerSecret,
   SecretManagerSecretVersion,
   StorageBucket,
   StorageBucketObject,
+  VpcAccessConnector,
 } from "../../.gen/providers/google";
-import { GoogleVpcAccessConnector } from "../../.gen/providers/google-beta";
 import { DataArchiveFile } from "../../.gen/providers/archive";
 import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
@@ -82,12 +81,12 @@ export default class GcpStack extends TerraformStack {
       new BigcommerceProvider(this, "bigcommerce");
     }
 
-    functions.forEach(func => this.generateFunction(func, bucket));
+    functions.forEach(func => this.generateFunction(func, bucket, this.options));
 
     this.generateSecrets();
   }
 
-  generateFunction(func: GcpFunction, bucket: StorageBucket) {
+  generateFunction(func: GcpFunction, bucket: StorageBucket, options: StackOptions) {
     const { functionsDir } = this.options;
     const functionDir = `${functionsDir}/${func.name}`;
 
@@ -165,25 +164,20 @@ export default class GcpStack extends TerraformStack {
     }
 
     if (func.staticIp && !this.existingStaticIpConnectors.length) {
+      const region = options.region;
       const net = new ComputeNetwork(this, "static-ip-vpc", {
         name: "static-ip-vpc",
         autoCreateSubnetworks: false,
       });
-      const subnet = new ComputeSubnetwork(this, "static-ip-subnet", {
-        ipCidrRange: "10.1.1.0/28",
-        name: "static-ip-subnet",
-        network: net.id,
-        region: "europe-west2",
-      });
       const staticIp = new ComputeAddress(this, "static-ip", {
         name: "static-ip",
         addressType: "EXTERNAL",
-        region: subnet.region,
+        region,
       });
       const router = new ComputeRouter(this, "static-ip-router", {
         name: "static-ip-router",
         network: net.id,
-        region: subnet.region,
+        region,
       });
       new ComputeRouterNat(this, "static-ip-nat", {
         name: "static-ip-nat",
@@ -193,13 +187,11 @@ export default class GcpStack extends TerraformStack {
         sourceSubnetworkIpRangesToNat: "ALL_SUBNETWORKS_ALL_IP_RANGES",
         natIps: [staticIp.selfLink],
       });
-      const connector = new GoogleVpcAccessConnector(this, "static-ip-connector", {
+      const connector = new VpcAccessConnector(this, "static-ip-connector", {
         name: "static-ip-connector",
-        subnet: [{ name: subnet.name }],
-        region: subnet.region,
-        machineType: "f1-micro",
-        minInstances: 2,
-        maxInstances: 3,
+        network: net.name,
+        ipCidrRange: "10.1.1.0/28",
+        region,
         minThroughput: 200,
         maxThroughput: 300,
       });
