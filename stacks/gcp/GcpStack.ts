@@ -5,6 +5,11 @@ import {
   CloudfunctionsFunction,
   CloudfunctionsFunctionIamMember,
   CloudSchedulerJob,
+  ComputeAddress,
+  ComputeNetwork,
+  ComputeRouter,
+  ComputeRouterNat,
+  ComputeSubnetwork,
   GoogleProvider,
   PubsubTopic,
   SecretManagerSecret,
@@ -12,6 +17,7 @@ import {
   StorageBucket,
   StorageBucketObject,
 } from "../../.gen/providers/google";
+import { GoogleVpcAccessConnector } from "../../.gen/providers/google-beta";
 import { DataArchiveFile } from "../../.gen/providers/archive";
 import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
@@ -32,6 +38,7 @@ export default class GcpStack extends TerraformStack {
   private projectId: string;
   private existingTopics: string[] = [];
   private existingBucketTriggers: string[] = [];
+  private existingStaticIpConnectors: string[] = [];
   constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
     super(scope, name);
 
@@ -109,6 +116,8 @@ export default class GcpStack extends TerraformStack {
       sourceArchiveObject: object.name,
       availableMemoryMb: func.memory ?? 256,
       entryPoint: "default",
+      vpcConnector: func.staticIp ? "static-ip-connector" : undefined,
+      vpcConnectorEgressSettings: func.staticIp ? "ALL_TRAFFIC" : undefined,
       environmentVariables: {
         NODE_ENV: this.options.environment,
         GCP_PROJECT: this.projectId,
@@ -153,6 +162,48 @@ export default class GcpStack extends TerraformStack {
         location: "EU",
       });
       this.existingBucketTriggers.push(func.bucket);
+    }
+
+    if (func.staticIp && !this.existingStaticIpConnectors.length) {
+      const net = new ComputeNetwork(this, "static-ip-vpc", {
+        name: "static-ip-vpc",
+        autoCreateSubnetworks: false,
+      });
+      const subnet = new ComputeSubnetwork(this, "static-ip-subnet", {
+        ipCidrRange: "10.1.1.0/28",
+        name: "static-ip-subnet",
+        network: net.id,
+        region: "europe-west2",
+      });
+      const staticIp = new ComputeAddress(this, "static-ip", {
+        name: "static-ip",
+        addressType: "EXTERNAL",
+        region: subnet.region,
+      });
+      const router = new ComputeRouter(this, "static-ip-router", {
+        name: "static-ip-router",
+        network: net.id,
+        region: subnet.region,
+      });
+      new ComputeRouterNat(this, "static-ip-nat", {
+        name: "static-ip-nat",
+        router: router.name,
+        region: router.region,
+        natIpAllocateOption: "MANUAL_ONLY",
+        sourceSubnetworkIpRangesToNat: "ALL_SUBNETWORKS_ALL_IP_RANGES",
+        natIps: [staticIp.selfLink],
+      });
+      const connector = new GoogleVpcAccessConnector(this, "static-ip-connector", {
+        name: "static-ip-connector",
+        subnet: [{ name: subnet.name }],
+        region: subnet.region,
+        machineType: "f1-micro",
+        minInstances: 2,
+        maxInstances: 3,
+        minThroughput: 200,
+        maxThroughput: 300,
+      });
+      this.existingStaticIpConnectors.push(connector.name);
     }
   }
 
