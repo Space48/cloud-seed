@@ -6,7 +6,7 @@ import serve from "../serve";
 
 const BUILD_DIR = "./.build/functions";
 
-export const cmdServe: cliCommand = (argv) => {
+export const cmdServe: cliCommand = argv => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
@@ -20,7 +20,7 @@ export const cmdServe: cliCommand = (argv) => {
   let args: arg.Result<arg.Spec>;
   try {
     args = arg(validArgs, { argv });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "ARG_UNKNOWN_OPTION") {
       return printAndExit(error.message);
     }
@@ -52,7 +52,7 @@ export const cmdServe: cliCommand = (argv) => {
   let manifest;
   try {
     manifest = readFileSync(BUILD_DIR + "/../functions.json").toLocaleString();
-  } catch (e) {
+  } catch (e: any) {
     if (e.code === "ENOENT") {
       return printAndExit("> No build manifest detected. Did you run the build command first?");
     } else {
@@ -69,7 +69,7 @@ export const cmdServe: cliCommand = (argv) => {
   let cdktf;
   try {
     cdktf = readFileSync(BUILD_DIR + "/../cdk.tf.json").toLocaleString();
-  } catch (e) {
+  } catch (e: any) {
     if (e.code === "ENOENT") {
       return printAndExit("> No CDKTF config detected. Did you run the build command first?");
     } else {
