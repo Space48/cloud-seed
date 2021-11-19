@@ -18,9 +18,8 @@
       "ignoreStrings": true,
       "ignoreTemplateLiterals": true
     }],
-    "semi": ["error", "always"],
-    "quotes": ["error", "double"],
-    "func-names": 2,
+    "semi": ["warn", "always"],
+    "quotes": ["warn", "double"],
     "prefer-const": "error",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": 1,

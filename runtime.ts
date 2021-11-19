@@ -34,7 +34,7 @@ export type ScheduleConfig = {
 
 export type FirestoreConfig = {
   type: "firestore";
-  collection: string;
+  document: string;
   firestoreEvent?: "create" | "write" | "update" | "delete";
 } & FunctionConfig;
 

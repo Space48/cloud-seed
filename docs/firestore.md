@@ -5,7 +5,7 @@ This allows you to invoke functions in response to events within Firestore such 
 Parameters:
 
 - `type` must be `"firestore"`
-- `collection` the name of the firestore collection.
+- `document` the name of the firestore document.
 - Optional: `event` can be one of: `write` (default), `create`, `update` or `delete`
 
 ## Code sample
@@ -23,7 +23,7 @@ export default fn;
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "firestore",
-  collection: "myCollection",
+  document: "collection/{doc}",
   // Optional event type (defaults to 'write').
   firestoreEvent: "create"
 };
