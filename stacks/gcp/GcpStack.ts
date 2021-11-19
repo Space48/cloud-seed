@@ -56,7 +56,7 @@ export default class GcpStack extends TerraformStack {
           prefix: this.options.backendPrefix,
         })
       : new LocalBackend(this, {
-          path: path.join(this.options.functionsDir + "../"),
+          path: path.join(this.options.functionsDir, "../"),
         });
 
     // Configure the Google Provider.
@@ -88,7 +88,7 @@ export default class GcpStack extends TerraformStack {
 
   generateFunction(func: GcpFunction, bucket: StorageBucket, options: StackOptions) {
     const { functionsDir } = this.options;
-    const functionDir = `${functionsDir}/${func.name}`;
+    const functionDir = path.join(functionsDir, func.name);
 
     const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
@@ -245,7 +245,7 @@ export default class GcpStack extends TerraformStack {
         eventType = `providers/cloud.firestore/eventTypes/document.${
           config.firestoreEvent ?? "write"
         }`;
-        resource = `project/${this.projectId}/databases/(default)/documents/${config.collection}`;
+        resource = config.document;
         break;
       case "storage":
         eventType = `google.storage.object.${config.storageEvent ?? "finalize"}`;

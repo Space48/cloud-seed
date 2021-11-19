@@ -123,7 +123,7 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
-### Firestore collection triggers:
+### Firestore document triggers:
 
 ```typescript
 import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
@@ -138,7 +138,7 @@ export default fn;
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "firestore",
-  collection: "myCollection",
+  document: "collection/{doc}",
   // Optional event type (defaults to 'write').
   firestoreEvent: "create"
 };
