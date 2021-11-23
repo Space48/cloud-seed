@@ -80,12 +80,12 @@ export default class GcpStack extends TerraformStack {
       new BigcommerceProvider(this, "bigcommerce");
     }
 
-    functions.forEach(func => this.generateFunction(func, bucket, this.options));
+    functions.forEach(func => this.generateFunction(func, bucket));
 
     this.generateSecrets();
   }
 
-  generateFunction(func: GcpFunction, bucket: StorageBucket, options: StackOptions) {
+  generateFunction(func: GcpFunction, bucket: StorageBucket) {
     const { functionsDir } = this.options;
     const functionDir = path.join(functionsDir, func.name);
 
@@ -155,7 +155,7 @@ export default class GcpStack extends TerraformStack {
     }
 
     if (func.staticIp && !this.existingStaticIpConnectors.length) {
-      const region = options.region;
+      const region = this.options.region;
       const net = new ComputeNetwork(this, "static-ip-vpc", {
         name: "static-ip-vpc",
         autoCreateSubnetworks: false,
@@ -240,7 +240,8 @@ export default class GcpStack extends TerraformStack {
         break;
       case "storage":
         eventType = `google.storage.object.${config.storageEvent ?? "finalize"}`;
-        resource = config.bucket;
+        resource =
+          config.bucket.environmentSpecific?.[this.options.environment] ?? config.bucket.default;
         break;
     }
 

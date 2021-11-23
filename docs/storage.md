@@ -23,7 +23,14 @@ export default fn;
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "storage",
-  bucket: "myBucket",
+  bucket: {
+    default: "myBucket",
+    // optional environment-specific buckets
+    environmentSpecific: {
+      production: "myProdBucket",
+      ...
+    },
+  },
   // Optional event type (defaults to 'finalize').
   storageEvent: "finalize"
 };
