@@ -36,7 +36,6 @@ export default class GcpStack extends TerraformStack {
   private options: StackOptions;
   private projectId: string;
   private existingTopics: string[] = [];
-  private existingBucketTriggers: string[] = [];
   private existingStaticIpConnectors: string[] = [];
   constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
     super(scope, name);
@@ -153,14 +152,6 @@ export default class GcpStack extends TerraformStack {
           },
         ],
       });
-    }
-
-    if (func.type === "storage" && !this.existingBucketTriggers.includes(func.bucket)) {
-      new StorageBucket(this, func.bucket, {
-        name: func.bucket,
-        location: "EU",
-      });
-      this.existingBucketTriggers.push(func.bucket);
     }
 
     if (func.staticIp && !this.existingStaticIpConnectors.length) {
