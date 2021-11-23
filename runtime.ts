@@ -40,7 +40,10 @@ export type FirestoreConfig = {
 
 export type StorageConfig = {
   type: "storage";
-  bucket: string;
+  bucket: {
+    default: string;
+    environmentSpecific?: Record<string, string>;
+  };
   storageEvent?: "finalize" | "delete" | "archive" | "metadataUpdate";
 } & FunctionConfig;
 
