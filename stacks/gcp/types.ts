@@ -15,4 +15,4 @@ export type GcpFunction = GcpConfig & {
 
 export type FunctionTriggerConfig =
   | { triggerHttp: boolean }
-  | { eventTrigger: { eventType: string; resource: string }[] };
+  | { eventTrigger: { eventType: string; resource: string } };
