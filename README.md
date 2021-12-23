@@ -1,5 +1,9 @@
 # Space48 Functions CLI
 
+## BREAKING CHANGES
+
+- Removed `serve` CLI command
+- Removed `ashsmith/bigcommerce` provider
 
 ## Using on a project:
 
@@ -26,7 +30,7 @@ Define your first cloud function:
 
 `src/myFirstFunction.ts`
 ```typescript
-import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { HttpFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
 const myFunction: HttpFunction = (req, res) => {
@@ -68,7 +72,7 @@ The only thing you need to define for your function to work is the named export:
 ### HTTP Functions:
 
 ```typescript
-import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { HttpFunction } from "@google-cloud/functions-framework";
 import type { GcpConfig } from "@space48/cloud-seed";
 
 const myFunction: HttpFunction = (req, res) => {
@@ -89,10 +93,10 @@ export const runtimeConfig: GcpConfig = {
 ### PubSub topic subscriptions:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction (data) => {
+const fn: CloudEventFunction (data) => {
   console.log("This is a event triggered function", data);
 };
 
@@ -107,10 +111,10 @@ export const runtimeConfig: GcpConfig = {
 ### Scheduled functions:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a scheduled triggered function", data);
 };
 
@@ -126,10 +130,10 @@ export const runtimeConfig: GcpConfig = {
 ### Firestore document triggers:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a firestore triggered function", data);
 };
 
@@ -147,10 +151,10 @@ export const runtimeConfig: GcpConfig = {
 ### Cloud Storage triggers
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a cloud storage triggered function", data);
 };
 
