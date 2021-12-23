@@ -16,10 +16,6 @@ export type FunctionConfig = {
 export type HttpConfig = {
   type: "http";
   public: boolean;
-  webhook?: {
-    type: "bigcommerce";
-    scopes: string[];
-  };
 } & FunctionConfig;
 
 export type EventConfig = {

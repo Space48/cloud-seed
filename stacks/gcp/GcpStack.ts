@@ -18,7 +18,6 @@ import {
   VpcAccessConnector,
 } from "../../.gen/providers/google";
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
-import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
 import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
 import path from "path";
@@ -74,14 +73,6 @@ export default class GcpStack extends TerraformStack {
 
     if (functions.length) {
       new ArchiveProvider(this, "Archive");
-    }
-
-    const hasWebhooks =
-      functions.filter(func => func.type === "http" && func.webhook?.type === "bigcommerce")
-        .length > 0;
-
-    if (hasWebhooks) {
-      new BigcommerceProvider(this, "bigcommerce");
     }
 
     functions.forEach(func => this.generateFunction(func, bucket));
@@ -179,17 +170,6 @@ export default class GcpStack extends TerraformStack {
         cloudFunction: config.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
-      });
-    }
-
-    // BigCommerce Webhook support.
-    if (config.webhook?.type === "bigcommerce") {
-      config.webhook.scopes.forEach((scope, index) => {
-        new Webhook(this, `${config.name}-webhook-${index}`, {
-          scope,
-          destination: cloudFunction.httpsTriggerUrl,
-          isActive: true,
-        });
       });
     }
   }
