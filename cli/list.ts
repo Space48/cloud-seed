@@ -3,7 +3,7 @@ import { printAndExit } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
 import list from "../list";
 
-export const cmdList: cliCommand = (argv) => {
+export const cmdList: cliCommand = argv => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
@@ -14,7 +14,7 @@ export const cmdList: cliCommand = (argv) => {
   let args: arg.Result<arg.Spec>;
   try {
     args = arg(validArgs, { argv });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "ARG_UNKNOWN_OPTION") {
       return printAndExit(error.message);
     }

@@ -10,7 +10,7 @@ const bundle = (dir: string, outDir: string, tsconfig?: string) => {
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
 
-  files.forEach((file) => {
+  files.forEach(file => {
     const fileContents = readFileSync(file);
     const sourceFile = ts.createSourceFile(
       "temp.ts",
@@ -30,7 +30,7 @@ const bundle = (dir: string, outDir: string, tsconfig?: string) => {
   });
 
   writeFileSync(path.join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
-  runtimeConfigs.forEach((config) => {
+  runtimeConfigs.forEach(config => {
     esbuild.buildSync({
       entryPoints: [config.file],
       absWorkingDir: process.cwd(),
@@ -61,12 +61,12 @@ function detectRuntimeConfig(node: ts.Node) {
   let runtimeConfig = null;
   if (node.kind === ts.SyntaxKind.SourceFile) {
     const sourceFile = node as ts.SourceFile;
-    sourceFile.statements.forEach((statement) => {
+    sourceFile.statements.forEach(statement => {
       if (statement.kind !== ts.SyntaxKind.FirstStatement) {
         return;
       }
       const firstStatement = statement as ts.VariableStatement;
-      firstStatement.declarationList.declarations.forEach((declaration) => {
+      firstStatement.declarationList.declarations.forEach(declaration => {
         if (declaration.name.kind !== ts.SyntaxKind.Identifier) {
           return;
         }
