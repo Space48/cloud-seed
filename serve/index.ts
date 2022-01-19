@@ -11,6 +11,10 @@ export default (
   env = "dev",
   port = 5000,
 ) => {
+  console.log("> \x1b[93mDEPRECATION WARNING! 😢");
+  console.log(
+    "> I'm very sorry, but this commmand is deprecated and will be removed in a future version.\x1b[0m",
+  );
   applyLocalConfig(projectId, env);
   const path = resolve(buildDir + "/" + fnConfig.name);
   const fn = require(path);

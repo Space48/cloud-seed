@@ -6,7 +6,7 @@ import serve from "../serve";
 
 const BUILD_DIR = "./.build/functions";
 
-export const cmdServe: cliCommand = (argv) => {
+export const cmdServe: cliCommand = argv => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
@@ -30,6 +30,7 @@ export const cmdServe: cliCommand = (argv) => {
   if (args["--help"]) {
     return printAndExit(
       `
+    \x1b[93mDEPRECATION WARNING: This command is deprecated and will be removed in a future version.\x1b[0m
     Usage
       $ cloud-seed serve <name> [--options]
     Serves the function <name> on the local machine
