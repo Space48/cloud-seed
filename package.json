@@ -29,9 +29,9 @@
   "dependencies": {
     "@google-cloud/functions-framework": "^2.1.0",
     "arg": "^5.0.1",
-    "cdktf": "^0.8.3",
-    "cdktf-cli": "^0.8.3",
-    "constructs": "^10.0.13",
+    "cdktf": "^0.9.0",
+    "cdktf-cli": "^0.9.0",
+    "constructs": "^10.0.25",
     "esbuild": "^0.14.8",
     "glob": "^7.2.0",
     "tslib": "^2.3.1",
