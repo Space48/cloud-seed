@@ -6,6 +6,8 @@ export type StackOptions = {
   region: string;
   backendBucket?: string;
   backendPrefix?: string;
+  envVars?: Record<string, string>;
+  secretNames?: string[];
 };
 
 export type GcpFunction = GcpConfig & {

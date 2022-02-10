@@ -25,23 +25,16 @@ import path from "path";
 // Name is always defined by the bundler, so mark as required.
 type RuntimeConfig = GcpConfig & { name: string };
 
-const defaultStackOptions: StackOptions = {
-  functionsDir: ".build/functions",
-  environment: "dev",
-  region: "europe-west2",
-};
-
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
   private projectId: string;
   private existingTopics: string[] = [];
   private existingStaticIpVpcSubnets: string[] = [];
-  constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
+  constructor(scope: Construct, name: string, options: StackOptions) {
     super(scope, name);
 
     this.projectId = name;
     this.options = {
-      ...defaultStackOptions,
       ...options,
     };
 
@@ -66,7 +59,7 @@ export default class GcpStack extends TerraformStack {
     // Creates a storage bucket for the functions to be uploaded to.
     const bucket = new StorageBucket(this, `${name}-functions`, {
       name: `${name}-functions`,
-      location: "EU",
+      location: "EUROPE-WEST2",
     });
 
     const functions = this.getFunctions();
@@ -97,11 +90,9 @@ export default class GcpStack extends TerraformStack {
       source: artifactPath.replace(/^.*\.build\//, ""),
     });
 
-    const envVars = fs.existsSync("./env.json")
-      ? JSON.parse(fs.readFileSync("./env.json").toLocaleString())?.[this.options.environment] ?? {}
-      : {};
+    const envVars = this.options.envVars ?? {};
 
-    const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
+    const cloudFunc = new CloudfunctionsFunction(this, func.name, {
       name: func.name,
       runtime: func.runtime ?? "nodejs14",
       timeout: func.timeout ?? 60,
@@ -112,6 +103,7 @@ export default class GcpStack extends TerraformStack {
       environmentVariables: {
         NODE_ENV: this.options.environment,
         GCP_PROJECT: this.projectId,
+        GCP_REGION: this.options.region,
         ...envVars,
       },
 
@@ -251,22 +243,10 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  /**
-   * Generate secrets manager secrets. These can then be access by application code.
-   * This expects an optional secrets.json file to exist in the root of the project.
-   */
   private generateSecrets() {
-    // Don't generate secrets if there isn't a secrets json file.
-    if (!fs.existsSync("./secrets.json")) {
-      return;
-    }
+    const secrets = this.options.secretNames?.filter(secret => secret.length);
 
-    const secrets = JSON.parse(fs.readFileSync("./secrets.json").toString()) as string[];
-    secrets.forEach(secret => {
-      if (typeof secret !== "string") {
-        return;
-      }
-
+    secrets?.forEach(secret => {
       const gcpSecret = new SecretManagerSecret(this, secret, {
         secretId: secret,
         replication: { automatic: true },

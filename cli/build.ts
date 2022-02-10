@@ -53,24 +53,21 @@ export const cmdBuild: cliCommand = argv => {
     );
   }
 
-  if (!args["--project"]) {
-    return printAndExit("--project must be set with the project name!", 1);
-  }
-
   const dir = args._[0] || ".";
   if (!existsSync(resolve(dir))) {
     return printAndExit(`> No such directory exists as the project root: ${dir}`);
   }
 
-  const outDir = args["--out-dir"] ?? "./.build";
-  const region = args["--region"] ?? "europe-west2";
-  const environment = args["--env"] ?? "dev";
+  const outDir = args["--out-dir"];
+  const project = args["--project"];
+  const region = args["--region"];
+  const environment = args["--env"];
   const backend = args["--backend"];
   const tsconfig = args["--tsconfig"];
   return build({
     dir,
     outDir,
-    project: args["--project"] as unknown as string,
+    project,
     region,
     debug: !!args["--debug"],
     environment,
