@@ -4,6 +4,8 @@
 
 - Removed `serve` CLI command
 - Removed `ashsmith/bigcommerce` provider
+- Removed `env.json` and `secrets.json`. Now all config is in `cloudseed.json`.
+- Removed certain build command line options, now they are available in `cloudseed.json`.
 
 ## Using on a project:
 
@@ -174,36 +176,4 @@ export const runtimeConfig: GcpConfig = {
   // Optional event type (defaults to 'finalize').
   storageEvent: "finalize"
 };
-```
-
-## Secrets Management
-
-In the root of your project you can define a `secrets.json` file which must be an array of secret names (the name of the secret within GCP Secret Manager).
-
-> Note: No secret values should be contained in here! You need to configure secret values manually within GCP (either via the console or CLI).
-
-```json
-[
-  "bigcommerce-access-token",
-  "name-of-my-secret-in-gcp"
-]
-```
-
-## Custom Environment Variables
-
-You can also specify custom runtime environment variables in an `env.json` file. Add a key for each environment, and then add all its variables as an object.
-
-```json
-{
-  "dev": {
-    "GCP_PROJECT": "project-foo",
-    "MY_DEV_ENV_VAR": "var-value"
-  },
-  "staging": {
-    "MY_CUSTOM_ENV_VAR": "var-value2"
-  },
-  "production": {
-    "MY_CUSTOM_ENV_VAR": "var-value3"
-  }
-}
 ```
