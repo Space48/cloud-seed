@@ -1,3 +1,5 @@
+import { GcsBackendProps } from "cdktf";
+import { BuildOptions } from "esbuild";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
@@ -15,16 +17,21 @@ export interface BaseConfig {
     gcp: {
       project: string;
       region: string;
-      backend: string;
     };
   };
-  envVars?: Record<string, string>;
-  secretNames?: string[];
+  tfConfig: {
+    backend: {
+      type: string;
+      backendOptions?: DeepPartial<GcsBackendProps>;
+    };
+  };
   buildConfig: {
     dir: string;
     outDir: string;
-    tsconfig?: string;
+    esbuildOptions?: DeepPartial<BuildOptions>;
   };
+  envVars?: Record<string, string>;
+  secretNames?: string[];
 }
 
 export interface RootConfig {

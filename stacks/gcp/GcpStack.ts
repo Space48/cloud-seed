@@ -1,6 +1,7 @@
-import fs from "fs";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { Construct } from "constructs";
-import { GcsBackend, LocalBackend, TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktf";
 import {
   CloudfunctionsFunction,
   CloudfunctionsFunctionIamMember,
@@ -20,64 +21,48 @@ import {
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
 import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
-import path from "path";
 
-// Name is always defined by the bundler, so mark as required.
+// Name is always defined by the stack, so mark as required.
 type RuntimeConfig = GcpConfig & { name: string };
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
-  private projectId: string;
   private existingTopics: string[] = [];
   private existingStaticIpVpcSubnets: string[] = [];
   constructor(scope: Construct, name: string, options: StackOptions) {
     super(scope, name);
 
-    this.projectId = name;
     this.options = {
       ...options,
     };
 
-    // If bucket is defined,
-    // then configure the remote backend where state will be stored,
-    // else use a local backend.
-    this.options.backendBucket?.length
-      ? new GcsBackend(this, {
-          bucket: this.options.backendBucket,
-          prefix: this.options.backendPrefix,
-        })
-      : new LocalBackend(this, {
-          path: path.join(this.options.functionsDir, "../"),
-        });
-
     // Configure the Google Provider.
     new GoogleProvider(this, "Google", {
       region: this.options.region,
-      project: this.projectId,
-    });
-
-    // Creates a storage bucket for the functions to be uploaded to.
-    const bucket = new StorageBucket(this, `${name}-functions`, {
-      name: `${name}-functions`,
-      location: "EUROPE-WEST2",
+      project: this.options.project,
     });
 
     const functions = this.getFunctions();
 
     if (functions.length) {
+      // Configure the Archive Provider if archives need to be generated
       new ArchiveProvider(this, "Archive");
+      // Creates a storage bucket for the functions source to be uploaded to.
+      const bucket = new StorageBucket(this, "FuncSourceBucket", {
+        name: `${name}-functions`,
+        location: this.options.region.toUpperCase(),
+      });
+      functions.forEach(func => this.generateFunction(func, bucket));
     }
-
-    functions.forEach(func => this.generateFunction(func, bucket));
 
     this.generateSecrets();
   }
 
   private generateFunction(func: GcpFunction, bucket: StorageBucket) {
     const { functionsDir } = this.options;
-    const functionDir = path.join(functionsDir, func.name);
+    const functionDir = join(functionsDir, func.name);
 
-    const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
+    const artifactPath = join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
       outputPath: artifactPath.replace(/^.*\.build\//, ""),
@@ -102,7 +87,7 @@ export default class GcpStack extends TerraformStack {
       entryPoint: "default",
       environmentVariables: {
         NODE_ENV: this.options.environment,
-        GCP_PROJECT: this.projectId,
+        GCP_PROJECT: this.options.project,
         GCP_REGION: this.options.region,
         ...envVars,
       },
@@ -111,7 +96,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     if (func.type === "http") {
-      this.configureHttpFunction(func, cloudFunc);
+      this.configureHttpFunction(func);
     }
 
     // Create pubsub topics if they don't exist already.
@@ -131,7 +116,7 @@ export default class GcpStack extends TerraformStack {
         name: func.name,
         schedule: func.schedule,
         pubsubTarget: {
-          topicName: `projects/${this.projectId}/topics/${scheduledTopic.name}`,
+          topicName: `projects/${this.options.project}/topics/${scheduledTopic.name}`,
           data: "c2NoZWR1bGU=",
         },
       });
@@ -151,7 +136,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: RuntimeConfig, cloudFunction: CloudfunctionsFunction) {
+  private configureHttpFunction(config: RuntimeConfig) {
     if (config.type !== "http") {
       return;
     }
@@ -260,7 +245,7 @@ export default class GcpStack extends TerraformStack {
   }
 
   private getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
-    const contents = fs.readFileSync(path.join(this.options.functionsDir, "../functions.json"));
+    const contents = readFileSync(join(this.options.functionsDir, "../functions.json"));
     return JSON.parse(contents.toString());
   }
 }

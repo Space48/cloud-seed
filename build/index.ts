@@ -1,19 +1,16 @@
 import { join } from "path";
 import { existsSync, mkdirSync, rmdirSync } from "fs";
-import { App } from "cdktf";
+import { App, GcsBackend, GcsBackendProps, LocalBackend } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
 import bundle from "./esbuild/bundle";
 import { BaseConfig, DeepPartial, getRootConfig, RootConfig } from "../utils/rootConfig";
+import { BuildOptions } from "esbuild";
 
 export type BuildOpts = {
   dir: string;
   outDir: string;
-  project: string;
-  region: string;
   debug: boolean;
   environment: string;
-  backend?: string;
-  tsconfig?: string;
 };
 
 export default (buildOpts: Partial<BuildOpts>) => {
@@ -29,15 +26,32 @@ export default (buildOpts: Partial<BuildOpts>) => {
   mkdirSync(functionsOutDir, { recursive: true });
 
   // Run bundler.
-  bundle(options.buildConfig.dir, options.buildConfig.outDir, options.buildConfig.tsconfig);
+  bundle(
+    options.buildConfig.dir,
+    options.buildConfig.outDir,
+    options.buildConfig.esbuildOptions as Partial<BuildOptions>,
+  );
 
   // Generate stacks.
   const app = new App({ outdir: options.buildConfig.outDir });
+
+  // If bucket is defined,
+  // then configure the remote backend where state will be stored,
+  // else use a local backend.
+  options.tfConfig.backend.type.toLowerCase() === "gcp"
+    ? new GcsBackend(app, {
+        bucket: options.tfConfig.backend.backendOptions?.bucket!,
+        ...(options.tfConfig.backend.backendOptions as Partial<GcsBackendProps>),
+      })
+    : new LocalBackend(app, {
+        path: join(functionsOutDir, "../"),
+      });
+
   new GcpStack(app, options.cloud.gcp.project, {
     functionsDir: functionsOutDir,
     environment: buildOpts.environment ?? "dev",
+    project: options.cloud.gcp.project,
     region: options.cloud.gcp.region,
-    backendBucket: options.cloud.gcp.backend,
     envVars: options.envVars,
     secretNames: options.secretNames,
   });
@@ -55,21 +69,20 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
   return {
     cloud: {
       gcp: {
-        project:
-          cmdOpts.project ??
-          envSpecificRoot?.cloud?.gcp?.project ??
-          defaultRoot?.cloud?.gcp?.project ??
-          "",
+        project: envSpecificRoot?.cloud?.gcp?.project ?? defaultRoot?.cloud?.gcp?.project ?? "",
         region:
-          cmdOpts.region ??
-          envSpecificRoot?.cloud?.gcp?.region ??
-          defaultRoot?.cloud?.gcp?.region ??
-          "europe-west2",
-        backend:
-          cmdOpts.backend ??
-          envSpecificRoot?.cloud?.gcp?.backend ??
-          defaultRoot?.cloud?.gcp?.backend ??
-          "",
+          envSpecificRoot?.cloud?.gcp?.region ?? defaultRoot?.cloud?.gcp?.region ?? "europe-west2",
+      },
+    },
+    tfConfig: {
+      backend: {
+        type:
+          envSpecificRoot?.tfConfig?.backend?.type ??
+          defaultRoot?.tfConfig?.backend?.type ??
+          "local",
+        backendOptions:
+          envSpecificRoot?.tfConfig?.backend?.backendOptions ??
+          defaultRoot?.tfConfig?.backend?.backendOptions,
       },
     },
     buildConfig: {
@@ -79,10 +92,8 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
         envSpecificRoot?.buildConfig?.outDir ??
         defaultRoot?.buildConfig?.outDir ??
         ".build",
-      tsconfig:
-        cmdOpts.tsconfig ??
-        envSpecificRoot?.buildConfig?.tsconfig ??
-        defaultRoot?.buildConfig?.tsconfig,
+      esbuildOptions:
+        envSpecificRoot?.buildConfig?.esbuildOptions ?? defaultRoot?.buildConfig?.esbuildOptions,
     },
     envVars: Object.fromEntries(
       Object.entries(envSpecificRoot?.envVars ?? defaultRoot?.envVars ?? {})

@@ -3,9 +3,8 @@ import { GcpConfig } from "../../runtime";
 export type StackOptions = {
   functionsDir: string;
   environment: string;
+  project: string;
   region: string;
-  backendBucket?: string;
-  backendPrefix?: string;
   envVars?: Record<string, string>;
   secretNames?: string[];
 };

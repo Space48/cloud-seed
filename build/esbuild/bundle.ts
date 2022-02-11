@@ -1,10 +1,10 @@
 import ts from "typescript";
 import { sync } from "glob";
 import { readFileSync, writeFileSync } from "fs";
-import * as esbuild from "esbuild";
+import esbuild, { BuildOptions } from "esbuild";
 import path from "path";
 
-const bundle = (dir: string, outDir: string, tsconfig?: string) => {
+const bundle = (dir: string, outDir: string, esbuildOptions: Partial<BuildOptions>) => {
   const files = sync(path.join(dir, "src/**/*.ts"));
 
   let runtimeConfig: any = null;
@@ -39,7 +39,7 @@ const bundle = (dir: string, outDir: string, tsconfig?: string) => {
       platform: "node",
       outfile: path.join(outDir, `functions/${config.name}/index.js`),
       sourcemap: "both",
-      tsconfig,
+      ...esbuildOptions,
     });
   });
 };
