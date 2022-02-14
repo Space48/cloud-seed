@@ -1,10 +1,11 @@
-import fs from "fs";
+import { readFileSync } from "fs";
+import { join, resolve } from "path";
 
-export default () => {
+export default (outDir?: string) => {
   let fns;
   try {
-    fns = JSON.parse(fs.readFileSync(".build/functions.json").toLocaleString());
-  } catch (e) {
+    fns = JSON.parse(readFileSync(resolve(join(outDir ?? ".build", "functions.json"))).toString());
+  } catch (e: any) {
     if (e.code === "ENOENT") {
       fns = [];
     } else {

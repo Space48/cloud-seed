@@ -1,11 +1,12 @@
 import { GcpConfig } from "../../runtime";
 
 export type StackOptions = {
-  functionsDir: string;
+  outDir: string;
   environment: string;
+  project: string;
   region: string;
-  backendBucket?: string;
-  backendPrefix?: string;
+  envVars?: Record<string, string>;
+  secretNames?: string[];
 };
 
 export type GcpFunction = GcpConfig & {
@@ -15,4 +16,4 @@ export type GcpFunction = GcpConfig & {
 
 export type FunctionTriggerConfig =
   | { triggerHttp: boolean }
-  | { eventTrigger: { eventType: string; resource: string }[] };
+  | { eventTrigger: { eventType: string; resource: string } };

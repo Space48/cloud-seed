@@ -5,17 +5,14 @@ import { printAndExit } from "./utils";
 import type { cliCommand } from "../bin/entrypoint";
 import build from "../build";
 
-export const cmdBuild: cliCommand = (argv) => {
+export const cmdBuild: cliCommand = argv => {
   const validArgs: arg.Spec = {
     // Types
     "--help": Boolean,
     "--debug": Boolean,
-    "--project": String,
-    "--region": String,
     "--env": String,
+    "--src-dir": String,
     "--out-dir": String,
-    "--backend": String,
-    "--tsconfig": String,
 
     // Aliases
     "-h": "--help",
@@ -25,7 +22,7 @@ export const cmdBuild: cliCommand = (argv) => {
   let args: arg.Result<arg.Spec>;
   try {
     args = arg(validArgs, { argv });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "ARG_UNKNOWN_OPTION") {
       return printAndExit(error.message);
     }
@@ -38,12 +35,9 @@ export const cmdBuild: cliCommand = (argv) => {
     Usage
       $ cloud-seed build <directory> [--options]
     Options
-      --project=[name]  Set a project name
-      --region=[region] Set a valid region (defaults to europe-west2 for GCP)
       --env=[env]       Set an environment eg: production, staging, dev, uat
+      --src-dir=[src]   Set the dir for the source files
       --out-dir=[dir]   Set the dir for the build files
-      --backend=[path]  Path to a remote backend Terraform state
-      --tsconfig=[path] Custom tsconfig path
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
     For more information run a command with the --help flag
@@ -53,28 +47,21 @@ export const cmdBuild: cliCommand = (argv) => {
     );
   }
 
-  if (!args["--project"]) {
-    return printAndExit("--project must be set with the project name!", 1);
+  const rootDir = args._[0] || ".";
+  if (!existsSync(resolve(rootDir))) {
+    return printAndExit(`> No such directory exists as the project root: ${rootDir}`);
   }
-
-  const dir = args._[0] || ".";
-  if (!existsSync(resolve(dir))) {
-    return printAndExit(`> No such directory exists as the project root: ${dir}`);
+  const srcDir = args["--src-dir"];
+  if (srcDir && !existsSync(resolve(srcDir))) {
+    return printAndExit(`> No such directory exists as the project source directory: ${srcDir}`);
   }
-
-  const outDir = args["--out-dir"] ?? "./.build";
-  const region = args["--region"] ?? "europe-west2";
-  const environment = args["--env"] ?? "dev";
-  const backend = args["--backend"];
-  const tsconfig = args["--tsconfig"];
+  const outDir = args["--out-dir"];
+  const environment = args["--env"];
   return build({
-    dir,
+    rootDir,
+    srcDir,
     outDir,
-    project: args["--project"] as unknown as string,
-    region,
     debug: !!args["--debug"],
     environment,
-    backend,
-    tsconfig,
   });
 };

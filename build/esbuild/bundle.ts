@@ -1,16 +1,16 @@
 import ts from "typescript";
 import { sync } from "glob";
 import { readFileSync, writeFileSync } from "fs";
-import * as esbuild from "esbuild";
-import path from "path";
+import { BuildOptions, buildSync } from "esbuild";
+import { join, relative } from "path";
 
-const bundle = (dir: string, outDir: string, tsconfig?: string) => {
-  const files = sync(path.join(dir, "src/**/*.ts"));
+const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptions>) => {
+  const files = sync(join(dir, "**/*.ts"));
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
 
-  files.forEach((file) => {
+  files.forEach(file => {
     const fileContents = readFileSync(file);
     const sourceFile = ts.createSourceFile(
       "temp.ts",
@@ -29,24 +29,24 @@ const bundle = (dir: string, outDir: string, tsconfig?: string) => {
     }
   });
 
-  writeFileSync(path.join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
-  runtimeConfigs.forEach((config) => {
-    esbuild.buildSync({
+  writeFileSync(join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
+  runtimeConfigs.forEach(config => {
+    buildSync({
       entryPoints: [config.file],
       absWorkingDir: process.cwd(),
       format: "cjs",
       bundle: true,
       platform: "node",
-      outfile: path.join(outDir, `functions/${config.name}/index.js`),
+      outfile: join(outDir, `functions/${config.name}/index.js`),
       sourcemap: "both",
-      tsconfig,
+      ...esbuildOptions,
     });
   });
 };
 export default bundle;
 
 function generateFunctionName(file: string) {
-  return file
+  return relative(process.cwd(), file)
     .replace(/(src|index|functions|function|\.ts)/g, "")
     .replace(/^\//, "")
     .replace(/\/$/, "")
@@ -61,12 +61,12 @@ function detectRuntimeConfig(node: ts.Node) {
   let runtimeConfig = null;
   if (node.kind === ts.SyntaxKind.SourceFile) {
     const sourceFile = node as ts.SourceFile;
-    sourceFile.statements.forEach((statement) => {
+    sourceFile.statements.forEach(statement => {
       if (statement.kind !== ts.SyntaxKind.FirstStatement) {
         return;
       }
       const firstStatement = statement as ts.VariableStatement;
-      firstStatement.declarationList.declarations.forEach((declaration) => {
+      firstStatement.declarationList.declarations.forEach(declaration => {
         if (declaration.name.kind !== ts.SyntaxKind.Identifier) {
           return;
         }

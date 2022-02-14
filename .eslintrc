@@ -46,10 +46,7 @@
   },
   "overrides": [
     {
-      "files": ["*.test.js","*.spec.js","*.test.ts","*.spec.ts"],
-      "rules": {
-        "node/no-unpublished-import": "off"
-      }
+      "files": ["*.test.js","*.spec.js","*.test.ts","*.spec.ts"]
     }
   ]
 }

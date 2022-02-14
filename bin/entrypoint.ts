@@ -3,9 +3,8 @@ import arg from "arg";
 
 export type cliCommand = (argv?: string[]) => void;
 const commands: { [command: string]: () => Promise<cliCommand> } = {
-  build: async () => await import("../cli/build").then((i) => i.cmdBuild),
-  list: async () => await import("../cli/list").then((i) => i.cmdList),
-  serve: async () => await import("../cli/serve").then((i) => i.cmdServe),
+  build: async () => await import("../cli/build").then(i => i.cmdBuild),
+  list: async () => await import("../cli/list").then(i => i.cmdList),
 };
 
 const args = arg(
@@ -52,7 +51,7 @@ process.on("SIGTERM", () => process.exit(0));
 process.on("SIGINT", () => process.exit(0));
 
 void commands[command]()
-  .then((exec) => exec(forwardedArgs))
+  .then(exec => exec(forwardedArgs))
   .then(async () => {
     if (command === "build") {
       process.exit(0);

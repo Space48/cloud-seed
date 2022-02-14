@@ -1,6 +1,7 @@
-import fs from "fs";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { Construct } from "constructs";
-import { GcsBackend, LocalBackend, TerraformStack } from "cdktf";
+import { TerraformStack } from "cdktf";
 import {
   CloudfunctionsFunction,
   CloudfunctionsFunctionIamMember,
@@ -17,96 +18,65 @@ import {
   StorageBucketObject,
   VpcAccessConnector,
 } from "../../.gen/providers/google";
-import { DataArchiveFile } from "../../.gen/providers/archive";
-import { BigcommerceProvider, Webhook } from "../../.gen/providers/bigcommerce";
+import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
 import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
-import path from "path";
 
-// Name is always defined by the bundler, so mark as required.
+// Name is always defined by the stack, so mark as required.
 type RuntimeConfig = GcpConfig & { name: string };
-
-const defaultStackOptions: StackOptions = {
-  functionsDir: ".build/functions",
-  environment: "dev",
-  region: "europe-west2",
-};
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
-  private projectId: string;
   private existingTopics: string[] = [];
-  private existingStaticIpConnectors: string[] = [];
-  constructor(scope: Construct, name: string, options: Partial<StackOptions>) {
+  private existingStaticIpVpcSubnets: string[] = [];
+  constructor(scope: Construct, name: string, options: StackOptions) {
     super(scope, name);
 
-    this.projectId = name;
     this.options = {
-      ...defaultStackOptions,
       ...options,
     };
 
-    // If bucket is defined,
-    // then configure the remote backend where state will be stored,
-    // else use a local backend.
-    this.options.backendBucket?.length
-      ? new GcsBackend(this, {
-          bucket: this.options.backendBucket,
-          prefix: this.options.backendPrefix,
-        })
-      : new LocalBackend(this, {
-          path: path.join(this.options.functionsDir, "../"),
-        });
-
     // Configure the Google Provider.
-    new GoogleProvider(this, "GoogleAuth", {
+    new GoogleProvider(this, "Google", {
       region: this.options.region,
-      project: this.projectId,
-    });
-
-    // Creates a storage bucket for the functions to be uploaded to.
-    const bucket = new StorageBucket(this, `${name}-functions`, {
-      name: `${name}-functions`,
-      location: "EU",
+      project: this.options.project,
     });
 
     const functions = this.getFunctions();
 
-    const hasWebhooks =
-      functions.filter(func => func.type === "http" && func.webhook?.type === "bigcommerce")
-        .length > 0;
-
-    if (hasWebhooks) {
-      new BigcommerceProvider(this, "bigcommerce");
+    if (functions.length) {
+      // Configure the Archive Provider if archives need to be generated
+      new ArchiveProvider(this, "Archive");
+      // Creates a storage bucket for the functions source to be uploaded to.
+      const bucket = new StorageBucket(this, "FuncSourceBucket", {
+        name: `${name}-functions`,
+        location: this.options.region.toUpperCase(),
+      });
+      functions.forEach(func => this.generateFunction(func, bucket));
     }
-
-    functions.forEach(func => this.generateFunction(func, bucket));
 
     this.generateSecrets();
   }
 
-  generateFunction(func: GcpFunction, bucket: StorageBucket) {
-    const { functionsDir } = this.options;
-    const functionDir = path.join(functionsDir, func.name);
+  private generateFunction(func: GcpFunction, bucket: StorageBucket) {
+    const functionDir = join(this.options.outDir, "functions", func.name);
+    const artifactPath = join(this.options.outDir, "artifacts", `${func.name}.zip`);
 
-    const artifactPath = path.join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
-      outputPath: artifactPath.replace(/^.*\.build\//, ""),
-      sourceDir: functionDir.replace(/^.*\.build\//, ""),
+      outputPath: artifactPath,
+      sourceDir: functionDir,
     });
 
     const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
-      source: artifactPath.replace(/^.*\.build\//, ""),
+      source: artifactPath,
     });
 
-    const envVars = fs.existsSync("./env.json")
-      ? JSON.parse(fs.readFileSync("./env.json").toLocaleString())?.[this.options.environment] ?? {}
-      : {};
+    const envVars = this.options.envVars ?? {};
 
-    const cloudFunc = new CloudfunctionsFunction(this, func.name + "-http", {
+    const cloudFunc = new CloudfunctionsFunction(this, func.name, {
       name: func.name,
       runtime: func.runtime ?? "nodejs14",
       timeout: func.timeout ?? 60,
@@ -114,11 +84,10 @@ export default class GcpStack extends TerraformStack {
       sourceArchiveObject: object.name,
       availableMemoryMb: func.memory ?? 256,
       entryPoint: "default",
-      vpcConnector: func.staticIp ? "static-ip-connector" : undefined,
-      vpcConnectorEgressSettings: func.staticIp ? "ALL_TRAFFIC" : undefined,
       environmentVariables: {
         NODE_ENV: this.options.environment,
-        GCP_PROJECT: this.projectId,
+        GCP_PROJECT: this.options.project,
+        GCP_REGION: this.options.region,
         ...envVars,
       },
 
@@ -126,7 +95,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     if (func.type === "http") {
-      this.configureHttpFunction(func, cloudFunc);
+      this.configureHttpFunction(func);
     }
 
     // Create pubsub topics if they don't exist already.
@@ -145,52 +114,28 @@ export default class GcpStack extends TerraformStack {
       new CloudSchedulerJob(this, func.name, {
         name: func.name,
         schedule: func.schedule,
-        pubsubTarget: [
-          {
-            topicName: `projects/${this.projectId}/topics/${scheduledTopic.name}`,
-            data: "c2NoZWR1bGU=",
-          },
-        ],
+        pubsubTarget: {
+          topicName: `projects/${this.options.project}/topics/${scheduledTopic.name}`,
+          data: "c2NoZWR1bGU=",
+        },
       });
     }
 
-    if (func.staticIp && !this.existingStaticIpConnectors.length) {
-      const region = this.options.region;
-      const net = new ComputeNetwork(this, "static-ip-vpc", {
-        name: "static-ip-vpc",
-        autoCreateSubnetworks: false,
-      });
-      const staticIp = new ComputeAddress(this, "static-ip", {
-        name: "static-ip",
-        addressType: "EXTERNAL",
-        region,
-      });
-      const router = new ComputeRouter(this, "static-ip-router", {
-        name: "static-ip-router",
-        network: net.id,
-        region,
-      });
-      new ComputeRouterNat(this, "static-ip-nat", {
-        name: "static-ip-nat",
-        router: router.name,
-        region: router.region,
-        natIpAllocateOption: "MANUAL_ONLY",
-        sourceSubnetworkIpRangesToNat: "ALL_SUBNETWORKS_ALL_IP_RANGES",
-        natIps: [staticIp.selfLink],
-      });
-      const connector = new VpcAccessConnector(this, "static-ip-connector", {
-        name: "static-ip-connector",
-        network: net.name,
-        ipCidrRange: "10.1.1.0/28",
-        region,
-        minThroughput: 200,
-        maxThroughput: 300,
-      });
-      this.existingStaticIpConnectors.push(connector.name);
+    // Configure static IP constraint
+    if (func.staticIp) {
+      const vpcAccessConnectorCidrRange = "10.1.1.0/28";
+      const vpcAccessConnectorName =
+        "static-ip-connector-" +
+        vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
+      cloudFunc.vpcConnector = vpcAccessConnectorName;
+      cloudFunc.vpcConnectorEgressSettings = "ALL_TRAFFIC";
+      if (!this.existingStaticIpVpcSubnets.length) {
+        this.configureStaticIpResources(vpcAccessConnectorName, vpcAccessConnectorCidrRange);
+      }
     }
   }
 
-  configureHttpFunction(config: RuntimeConfig, cloudFunction: CloudfunctionsFunction) {
+  private configureHttpFunction(config: RuntimeConfig) {
     if (config.type !== "http") {
       return;
     }
@@ -203,20 +148,9 @@ export default class GcpStack extends TerraformStack {
         member: "allUsers",
       });
     }
-
-    // BigCommerce Webhook support.
-    if (config.webhook?.type === "bigcommerce") {
-      config.webhook.scopes.forEach((scope, index) => {
-        new Webhook(this, `${config.name}-webhook-${index}`, {
-          scope,
-          destination: cloudFunction.httpsTriggerUrl,
-          isActive: true,
-        });
-      });
-    }
   }
 
-  generateFunctionTriggerConfig(config: RuntimeConfig): FunctionTriggerConfig {
+  private generateFunctionTriggerConfig(config: RuntimeConfig): FunctionTriggerConfig {
     if (config.type === "http") {
       return {
         triggerHttp: true,
@@ -246,29 +180,60 @@ export default class GcpStack extends TerraformStack {
     }
 
     return {
-      eventTrigger: [{ eventType, resource }],
+      eventTrigger: { eventType, resource },
     };
   }
 
-  /**
-   * Generate secrets manager secrets. These can then be access by application code.
-   * This expects an optional secrets.json file to exist in the root of the project.
-   */
-  generateSecrets() {
-    // Don't generate secrets if there isn't a secrets json file.
-    if (!fs.existsSync("./secrets.json")) {
-      return;
+  private configureStaticIpResources(
+    vpcAccessConnectorName: string,
+    vpcAccessConnectorCidrRange: string,
+  ) {
+    const region = this.options.region;
+    const netName = "static-ip-vpc";
+    if (!this.existingStaticIpVpcSubnets.length) {
+      const network = new ComputeNetwork(this, netName, {
+        name: netName,
+        autoCreateSubnetworks: false,
+      });
+      const staticIp = new ComputeAddress(this, "static-ip", {
+        name: "static-ip",
+        addressType: "EXTERNAL",
+        region,
+      });
+      const router = new ComputeRouter(this, "static-ip-router", {
+        name: "static-ip-router",
+        network: network.id,
+        region,
+      });
+      new ComputeRouterNat(this, "static-ip-nat", {
+        name: "static-ip-nat",
+        router: router.name,
+        region: router.region,
+        natIpAllocateOption: "MANUAL_ONLY",
+        sourceSubnetworkIpRangesToNat: "ALL_SUBNETWORKS_ALL_IP_RANGES",
+        natIps: [staticIp.selfLink],
+      });
     }
+    if (!this.existingStaticIpVpcSubnets.includes(vpcAccessConnectorCidrRange)) {
+      new VpcAccessConnector(this, vpcAccessConnectorName, {
+        name: vpcAccessConnectorName,
+        network: netName,
+        ipCidrRange: vpcAccessConnectorCidrRange,
+        region,
+        minThroughput: 200,
+        maxThroughput: 300,
+      });
+      this.existingStaticIpVpcSubnets.push(vpcAccessConnectorCidrRange);
+    }
+  }
 
-    const secrets = JSON.parse(fs.readFileSync("./secrets.json").toString()) as string[];
-    secrets.forEach(secret => {
-      if (typeof secret !== "string") {
-        return;
-      }
+  private generateSecrets() {
+    const secrets = this.options.secretNames?.filter(secret => secret.length);
 
+    secrets?.forEach(secret => {
       const gcpSecret = new SecretManagerSecret(this, secret, {
         secretId: secret,
-        replication: [{ automatic: true }],
+        replication: { automatic: true },
       });
 
       new SecretManagerSecretVersion(this, secret + "-version", {
@@ -278,8 +243,8 @@ export default class GcpStack extends TerraformStack {
     });
   }
 
-  getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
-    const contents = fs.readFileSync(path.join(this.options.functionsDir, "../functions.json"));
+  private getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
+    const contents = readFileSync(join(this.options.outDir, "functions.json"));
     return JSON.parse(contents.toString());
   }
 }

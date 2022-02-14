@@ -1,5 +1,11 @@
 # Space48 Functions CLI
 
+## BREAKING CHANGES
+
+- Removed `serve` CLI command
+- Removed `ashsmith/bigcommerce` provider
+- Removed `env.json` and `secrets.json`. Now all config is in `cloudseed.json`.
+- Removed certain build command line options, now they are available in `cloudseed.json`.
 
 ## Using on a project:
 
@@ -9,24 +15,11 @@ Add the package as a dev dependency (note you'll need to authenticate with githu
 npm install -D @space48/cloud-seed
 ```
 
-Modify your build command in package.json:
-
-```diff
--  "build": "tsc"
-+  "build": "tsc && cloud-seed build . --project=[your-project-name]"
-```
-
-Modify your `tsconfig.json` to set the outDir to `.build/dist`:
-```diff
-  "compilerOptions": {
-+    "outDir": ".build/dist",
-```
-
 Define your first cloud function:
 
 `src/myFirstFunction.ts`
 ```typescript
-import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { HttpFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
 const myFunction: HttpFunction = (req, res) => {
@@ -45,15 +38,15 @@ export const runtimeConfig: GcpConfig = {
 
 Then run your build command:
 ```
-npm run build
+npx @space48/cloud-seed build
 ```
 
 To apply the terraform config you'll be able to run the following:
 
 ```
-terraform init -backend-config="prefix=terraform/clients/[your-project-name]-[environment]" .build
-terraform plan .build -out=plan
-terraform apply plan
+terraform chdir=[buildDir] init
+terraform chdir=[buildDir] plan -out=plan
+terraform chdir=[buildDir] apply plan
 ```
 
 # How does this work?
@@ -68,7 +61,7 @@ The only thing you need to define for your function to work is the named export:
 ### HTTP Functions:
 
 ```typescript
-import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { HttpFunction } from "@google-cloud/functions-framework";
 import type { GcpConfig } from "@space48/cloud-seed";
 
 const myFunction: HttpFunction = (req, res) => {
@@ -89,10 +82,10 @@ export const runtimeConfig: GcpConfig = {
 ### PubSub topic subscriptions:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction (data) => {
+const fn: CloudEventFunction (data) => {
   console.log("This is a event triggered function", data);
 };
 
@@ -107,10 +100,10 @@ export const runtimeConfig: GcpConfig = {
 ### Scheduled functions:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a scheduled triggered function", data);
 };
 
@@ -126,10 +119,10 @@ export const runtimeConfig: GcpConfig = {
 ### Firestore document triggers:
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a firestore triggered function", data);
 };
 
@@ -147,10 +140,10 @@ export const runtimeConfig: GcpConfig = {
 ### Cloud Storage triggers
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction = (data) => {
+const fn: CloudEventFunction = (data) => {
   console.log("This is a cloud storage triggered function", data);
 };
 
@@ -172,34 +165,68 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
-## Secrets Management
+## Setting up a config file:
 
-In the root of your project you can define a `secrets.json` file which must be an array of secret names (the name of the secret within GCP Secret Manager).
-
-> Note: No secret values should be contained in here! You need to configure secret values manually within GCP (either via the console or CLI).
-
-```json
-[
-  "bigcommerce-access-token",
-  "name-of-my-secret-in-gcp"
-]
-```
-
-## Custom Environment Variables
-
-You can also specify custom runtime environment variables in an `env.json` file. Add a key for each environment, and then add all its variables as an object.
-
+You can set the cloud seed config by adding a `cloudseed.json` file in the project root directory. An example is provided below:
 ```json
 {
-  "dev": {
-    "GCP_PROJECT": "project-foo",
-    "MY_DEV_ENV_VAR": "var-value"
+  "$schema": "./node_modules/@space48/cloud-seed/schemas/cloudseed.schema.json",
+  "default": {
+    "cloud": {
+      "gcp": {
+        "region": "europe-west2"
+      }
+    },
+    "buildConfig": {
+      "dir": "./src",
+      "outDir": "./.build",
+    },
+    "secretNames": [
+      "apiKey1",
+      "apiKey2"
+    ]
   },
-  "staging": {
-    "MY_CUSTOM_ENV_VAR": "var-value2"
-  },
-  "production": {
-    "MY_CUSTOM_ENV_VAR": "var-value3"
+  "envOverrides": {
+    "staging": {
+      "cloud": {
+        "gcp": {
+          "project": "example-project-staging"
+        }
+      },
+      "tfConfig": {
+        "backend": {
+          "type": "gcs",
+          "backendOptions": {
+            "bucket": "example-backend-bucket",
+            "prefix": "path/to/staging/statefile/directory"
+          }
+        }
+      },
+      "envVars": {
+        "FOO": "Staging1",
+        "BAR": "Staging2"
+      }
+    },
+    "production": {
+      "cloud": {
+        "gcp": {
+          "project": "example-project-production"
+        }
+      },
+      "tfConfig": {
+        "backend": {
+          "type": "gcs",
+          "backendOptions": {
+            "bucket": "example-backend-bucket",
+            "prefix": "path/to/production/statefile/directory"
+          }
+        }
+      },
+      "envVars": {
+        "FOO": "Prod1",
+        "BAR": "Prod2"
+      }
+    }
   }
 }
 ```
