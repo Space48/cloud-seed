@@ -1,11 +1,11 @@
 import ts from "typescript";
 import { sync } from "glob";
 import { readFileSync, writeFileSync } from "fs";
-import esbuild, { BuildOptions } from "esbuild";
-import path from "path";
+import { BuildOptions, buildSync } from "esbuild";
+import { join, relative } from "path";
 
-const bundle = (dir: string, outDir: string, esbuildOptions: Partial<BuildOptions>) => {
-  const files = sync(path.join(dir, "src/**/*.ts"));
+const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptions>) => {
+  const files = sync(join(dir, "**/*.ts"));
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
@@ -29,15 +29,15 @@ const bundle = (dir: string, outDir: string, esbuildOptions: Partial<BuildOption
     }
   });
 
-  writeFileSync(path.join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
+  writeFileSync(join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
   runtimeConfigs.forEach(config => {
-    esbuild.buildSync({
+    buildSync({
       entryPoints: [config.file],
       absWorkingDir: process.cwd(),
       format: "cjs",
       bundle: true,
       platform: "node",
-      outfile: path.join(outDir, `functions/${config.name}/index.js`),
+      outfile: join(outDir, `functions/${config.name}/index.js`),
       sourcemap: "both",
       ...esbuildOptions,
     });
@@ -46,7 +46,7 @@ const bundle = (dir: string, outDir: string, esbuildOptions: Partial<BuildOption
 export default bundle;
 
 function generateFunctionName(file: string) {
-  return file
+  return relative(process.cwd(), file)
     .replace(/(src|index|functions|function|\.ts)/g, "")
     .replace(/^\//, "")
     .replace(/\/$/, "")

@@ -11,6 +11,7 @@ export const cmdBuild: cliCommand = argv => {
     "--help": Boolean,
     "--debug": Boolean,
     "--env": String,
+    "--src-dir": String,
     "--out-dir": String,
 
     // Aliases
@@ -35,6 +36,7 @@ export const cmdBuild: cliCommand = argv => {
       $ cloud-seed build <directory> [--options]
     Options
       --env=[env]       Set an environment eg: production, staging, dev, uat
+      --src-dir=[src]   Set the dir for the source files
       --out-dir=[dir]   Set the dir for the build files
       --help, -h        Displays this message
       --debug, -d       Outputs debug logging
@@ -45,15 +47,19 @@ export const cmdBuild: cliCommand = argv => {
     );
   }
 
-  const dir = args._[0] || ".";
-  if (!existsSync(resolve(dir))) {
-    return printAndExit(`> No such directory exists as the project root: ${dir}`);
+  const rootDir = args._[0] || ".";
+  if (!existsSync(resolve(rootDir))) {
+    return printAndExit(`> No such directory exists as the project root: ${rootDir}`);
   }
-
+  const srcDir = args["--src-dir"];
+  if (srcDir && !existsSync(resolve(srcDir))) {
+    return printAndExit(`> No such directory exists as the project source directory: ${srcDir}`);
+  }
   const outDir = args["--out-dir"];
   const environment = args["--env"];
   return build({
-    dir,
+    rootDir,
+    srcDir,
     outDir,
     debug: !!args["--debug"],
     environment,

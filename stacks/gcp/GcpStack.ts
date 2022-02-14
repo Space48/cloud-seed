@@ -59,20 +59,19 @@ export default class GcpStack extends TerraformStack {
   }
 
   private generateFunction(func: GcpFunction, bucket: StorageBucket) {
-    const { functionsDir } = this.options;
-    const functionDir = join(functionsDir, func.name);
+    const functionDir = join(this.options.outDir, "functions", func.name);
+    const artifactPath = join(this.options.outDir, "artifacts", `${func.name}.zip`);
 
-    const artifactPath = join(this.options.functionsDir, `../artifacts/${func.name}.zip`);
     const archive = new DataArchiveFile(this, func.name + "zip", {
       type: "zip",
-      outputPath: artifactPath.replace(/^.*\.build\//, ""),
-      sourceDir: functionDir.replace(/^.*\.build\//, ""),
+      outputPath: artifactPath,
+      sourceDir: functionDir,
     });
 
     const object = new StorageBucketObject(this, func.name + "_storage_zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
-      source: artifactPath.replace(/^.*\.build\//, ""),
+      source: artifactPath,
     });
 
     const envVars = this.options.envVars ?? {};
@@ -245,7 +244,7 @@ export default class GcpStack extends TerraformStack {
   }
 
   private getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
-    const contents = readFileSync(join(this.options.functionsDir, "../functions.json"));
+    const contents = readFileSync(join(this.options.outDir, "functions.json"));
     return JSON.parse(contents.toString());
   }
 }

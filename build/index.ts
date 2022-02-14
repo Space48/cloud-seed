@@ -1,4 +1,4 @@
-import { join } from "path";
+import { resolve } from "path";
 import { existsSync, mkdirSync, rmdirSync } from "fs";
 import { App, GcsBackend, GcsBackendProps, LocalBackend } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
@@ -7,54 +7,53 @@ import { BaseConfig, DeepPartial, getRootConfig, RootConfig } from "../utils/roo
 import { BuildOptions } from "esbuild";
 
 export type BuildOpts = {
-  dir: string;
+  rootDir: string;
+  srcDir: string;
   outDir: string;
   debug: boolean;
   environment: string;
 };
 
 export default (buildOpts: Partial<BuildOpts>) => {
-  const rootConfig = getRootConfig(buildOpts.dir ?? ".");
+  const rootConfig = getRootConfig(buildOpts.rootDir ?? ".");
 
   const options = mergeConfig(rootConfig, buildOpts);
 
-  const functionsOutDir = join(options.buildConfig.outDir, "functions");
+  const buildDir = resolve(options.buildConfig.dir);
+  const buildOutDir = resolve(options.buildConfig.outDir);
 
-  if (existsSync(functionsOutDir)) {
-    rmdirSync(functionsOutDir, { recursive: true });
+  if (existsSync(buildOutDir)) {
+    rmdirSync(buildOutDir, { recursive: true });
   }
-  mkdirSync(functionsOutDir, { recursive: true });
+  mkdirSync(buildOutDir, { recursive: true });
 
   // Run bundler.
-  bundle(
-    options.buildConfig.dir,
-    options.buildConfig.outDir,
-    options.buildConfig.esbuildOptions as Partial<BuildOptions>,
-  );
+  bundle(buildDir, buildOutDir, options.buildConfig.esbuildOptions);
 
   // Generate stacks.
   const app = new App({ outdir: options.buildConfig.outDir });
 
-  // If bucket is defined,
-  // then configure the remote backend where state will be stored,
-  // else use a local backend.
-  options.tfConfig.backend.type.toLowerCase() === "gcp"
-    ? new GcsBackend(app, {
-        bucket: options.tfConfig.backend.backendOptions?.bucket!,
-        ...(options.tfConfig.backend.backendOptions as Partial<GcsBackendProps>),
-      })
-    : new LocalBackend(app, {
-        path: join(functionsOutDir, "../"),
-      });
-
-  new GcpStack(app, options.cloud.gcp.project, {
-    functionsDir: functionsOutDir,
+  const stack = new GcpStack(app, options.cloud.gcp.project, {
+    outDir: buildOutDir,
     environment: buildOpts.environment ?? "dev",
     project: options.cloud.gcp.project,
     region: options.cloud.gcp.region,
     envVars: options.envVars,
     secretNames: options.secretNames,
   });
+
+  // If bucket is defined,
+  // then configure the remote backend where state will be stored,
+  // else use a local backend.
+  options.tfConfig.backend.type.toLowerCase() === "gcs"
+    ? new GcsBackend(stack, {
+        bucket: options.tfConfig.backend.backendOptions?.bucket!,
+        ...options.tfConfig.backend.backendOptions,
+      })
+    : new LocalBackend(stack, {
+        path: buildOutDir,
+      });
+
   app.synth();
 
   console.log("Success!");
@@ -80,20 +79,23 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
           envSpecificRoot?.tfConfig?.backend?.type ??
           defaultRoot?.tfConfig?.backend?.type ??
           "local",
-        backendOptions:
-          envSpecificRoot?.tfConfig?.backend?.backendOptions ??
-          defaultRoot?.tfConfig?.backend?.backendOptions,
+        backendOptions: (envSpecificRoot?.tfConfig?.backend?.backendOptions ??
+          defaultRoot?.tfConfig?.backend?.backendOptions) as Partial<GcsBackendProps> | undefined,
       },
     },
     buildConfig: {
-      dir: cmdOpts.dir ?? envSpecificRoot?.buildConfig?.dir ?? defaultRoot?.buildConfig?.dir ?? ".",
+      dir:
+        cmdOpts.srcDir ??
+        envSpecificRoot?.buildConfig?.dir ??
+        defaultRoot?.buildConfig?.dir ??
+        "src",
       outDir:
         cmdOpts.outDir ??
         envSpecificRoot?.buildConfig?.outDir ??
         defaultRoot?.buildConfig?.outDir ??
         ".build",
-      esbuildOptions:
-        envSpecificRoot?.buildConfig?.esbuildOptions ?? defaultRoot?.buildConfig?.esbuildOptions,
+      esbuildOptions: (envSpecificRoot?.buildConfig?.esbuildOptions ??
+        defaultRoot?.buildConfig?.esbuildOptions) as Partial<BuildOptions> | undefined,
     },
     envVars: Object.fromEntries(
       Object.entries(envSpecificRoot?.envVars ?? defaultRoot?.envVars ?? {})

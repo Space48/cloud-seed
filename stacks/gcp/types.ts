@@ -1,7 +1,7 @@
 import { GcpConfig } from "../../runtime";
 
 export type StackOptions = {
-  functionsDir: string;
+  outDir: string;
   environment: string;
   project: string;
   region: string;

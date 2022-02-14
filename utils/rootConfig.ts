@@ -1,10 +1,10 @@
 import { GcsBackendProps } from "cdktf";
 import { BuildOptions } from "esbuild";
 import { existsSync, readFileSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 
-export function getRootConfig(location: string): DeepPartial<RootConfig> {
-  const rootConfPath = join(location, "cloudseed.json");
+export function getRootConfig(rootDir: string): DeepPartial<RootConfig> {
+  const rootConfPath = resolve(join(rootDir, "cloudseed.json"));
   const rootConf = existsSync(rootConfPath) ? readFileSync(rootConfPath) : null;
   if (rootConf === null) {
     return {};
@@ -21,14 +21,14 @@ export interface BaseConfig {
   };
   tfConfig: {
     backend: {
-      type: string;
-      backendOptions?: DeepPartial<GcsBackendProps>;
+      type: "gcs" | "local";
+      backendOptions?: Partial<GcsBackendProps>;
     };
   };
   buildConfig: {
     dir: string;
     outDir: string;
-    esbuildOptions?: DeepPartial<BuildOptions>;
+    esbuildOptions?: Partial<BuildOptions>;
   };
   envVars?: Record<string, string>;
   secretNames?: string[];
