@@ -15,19 +15,6 @@ Add the package as a dev dependency (note you'll need to authenticate with githu
 npm install -D @space48/cloud-seed
 ```
 
-Modify your build command in package.json:
-
-```diff
--  "build": "tsc"
-+  "build": "tsc && cloud-seed build . --project=[your-project-name]"
-```
-
-Modify your `tsconfig.json` to set the outDir to `.build/dist`:
-```diff
-  "compilerOptions": {
-+    "outDir": ".build/dist",
-```
-
 Define your first cloud function:
 
 `src/myFirstFunction.ts`
@@ -51,15 +38,15 @@ export const runtimeConfig: GcpConfig = {
 
 Then run your build command:
 ```
-npm run build
+npx @space48/cloud-seed build
 ```
 
 To apply the terraform config you'll be able to run the following:
 
 ```
-terraform init -backend-config="prefix=terraform/clients/[your-project-name]-[environment]" .build
-terraform plan .build -out=plan
-terraform apply plan
+terraform chdir=[buildDir] init
+terraform chdir=[buildDir] plan -out=plan
+terraform chdir=[buildDir] apply plan
 ```
 
 # How does this work?
@@ -176,4 +163,70 @@ export const runtimeConfig: GcpConfig = {
   // Optional event type (defaults to 'finalize').
   storageEvent: "finalize"
 };
+```
+
+## Setting up a config file:
+
+You can set the cloud seed config by adding a `cloudseed.json` file in the project root directory. An example is provided below:
+```json
+{
+  "$schema": "./node_modules/@space48/cloud-seed/schemas/cloudseed.schema.json",
+  "default": {
+    "cloud": {
+      "gcp": {
+        "region": "europe-west2"
+      }
+    },
+    "buildConfig": {
+      "dir": "./src",
+      "outDir": "./.build",
+    },
+    "secretNames": [
+      "apiKey1",
+      "apiKey2"
+    ]
+  },
+  "envOverrides": {
+    "staging": {
+      "cloud": {
+        "gcp": {
+          "project": "example-project-staging"
+        }
+      },
+      "tfConfig": {
+        "backend": {
+          "type": "gcs",
+          "backendOptions": {
+            "bucket": "example-backend-bucket",
+            "prefix": "path/to/staging/statefile/directory"
+          }
+        }
+      },
+      "envVars": {
+        "FOO": "Staging1",
+        "BAR": "Staging2"
+      }
+    },
+    "production": {
+      "cloud": {
+        "gcp": {
+          "project": "example-project-production"
+        }
+      },
+      "tfConfig": {
+        "backend": {
+          "type": "gcs",
+          "backendOptions": {
+            "bucket": "example-backend-bucket",
+            "prefix": "path/to/production/statefile/directory"
+          }
+        }
+      },
+      "envVars": {
+        "FOO": "Prod1",
+        "BAR": "Prod2"
+      }
+    }
+  }
+}
 ```
