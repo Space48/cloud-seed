@@ -29,8 +29,8 @@ export default class GcpStack extends TerraformStack {
   private options: StackOptions;
   private existingTopics: string[] = [];
   private existingStaticIpVpcSubnets: string[] = [];
-  constructor(scope: Construct, name: string, options: StackOptions) {
-    super(scope, name);
+  constructor(scope: Construct, id: string, options: StackOptions) {
+    super(scope, id);
 
     this.options = {
       ...options,
@@ -49,7 +49,7 @@ export default class GcpStack extends TerraformStack {
       new ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
-        name: `${name}-functions`,
+        name: `${id}-functions`,
         location: this.options.region.toUpperCase(),
       });
       functions.forEach(func => this.generateFunction(func, bucket));
@@ -62,13 +62,13 @@ export default class GcpStack extends TerraformStack {
     const functionDir = join(this.options.outDir, "functions", func.name);
     const artifactPath = join(this.options.outDir, "artifacts", `${func.name}.zip`);
 
-    const archive = new DataArchiveFile(this, func.name + "zip", {
+    const archive = new DataArchiveFile(this, func.name + "-zip", {
       type: "zip",
       outputPath: artifactPath,
       sourceDir: functionDir,
     });
 
-    const object = new StorageBucketObject(this, func.name + "_storage_zip", {
+    const object = new StorageBucketObject(this, func.name + "-storage-zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
       source: artifactPath,
@@ -111,7 +111,7 @@ export default class GcpStack extends TerraformStack {
       const scheduledTopic = new PubsubTopic(this, func.name + "-schedule", {
         name: "scheduled-" + func.name,
       });
-      new CloudSchedulerJob(this, func.name, {
+      new CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
         pubsubTarget: {
@@ -220,8 +220,6 @@ export default class GcpStack extends TerraformStack {
         network: netName,
         ipCidrRange: vpcAccessConnectorCidrRange,
         region,
-        minThroughput: 200,
-        maxThroughput: 300,
       });
       this.existingStaticIpVpcSubnets.push(vpcAccessConnectorCidrRange);
     }
