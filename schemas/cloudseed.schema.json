@@ -9,7 +9,7 @@
               "type": "string"
             },
             "esbuildOptions": {
-              "$ref": "#/definitions/Partial<BuildOptions>"
+              "$ref": "#/definitions/BuildOptions"
             },
             "outDir": {
               "type": "string"
@@ -33,13 +33,13 @@
           },
           "type": "object"
         },
-        "envVars": {
+        "runtimeEnvironmentVariables": {
           "additionalProperties": {
             "type": "string"
           },
           "type": "object"
         },
-        "secretNames": {
+        "secretVariableNames": {
           "items": {
             "type": "string"
           },
@@ -48,19 +48,50 @@
         "tfConfig": {
           "properties": {
             "backend": {
-              "properties": {
-                "backendOptions": {
-                  "$ref": "#/definitions/Partial<GcsBackendProps>"
+              "anyOf": [
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/GcsBackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "gcs"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 },
-                "type": {
-                  "enum": [
-                    "gcs",
-                    "local"
-                  ],
-                  "type": "string"
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/LocalBackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "local"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/S3BackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "s3"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
-              },
-              "type": "object"
+              ]
             }
           },
           "type": "object"
@@ -68,50 +99,7 @@
       },
       "type": "object"
     },
-    "Charset": {
-      "enum": [
-        "ascii",
-        "utf8"
-      ],
-      "type": "string"
-    },
-    "Format": {
-      "enum": [
-        "cjs",
-        "esm",
-        "iife"
-      ],
-      "type": "string"
-    },
-    "Loader": {
-      "enum": [
-        "base64",
-        "binary",
-        "css",
-        "dataurl",
-        "default",
-        "file",
-        "js",
-        "json",
-        "jsx",
-        "text",
-        "ts",
-        "tsx"
-      ],
-      "type": "string"
-    },
-    "LogLevel": {
-      "enum": [
-        "debug",
-        "error",
-        "info",
-        "silent",
-        "verbose",
-        "warning"
-      ],
-      "type": "string"
-    },
-    "Partial<BuildOptions>": {
+    "BuildOptions": {
       "properties": {
         "absWorkingDir": {
           "description": "Documentation: https://esbuild.github.io/api/#working-directory",
@@ -429,7 +417,22 @@
       },
       "type": "object"
     },
-    "Partial<GcsBackendProps>": {
+    "Charset": {
+      "enum": [
+        "ascii",
+        "utf8"
+      ],
+      "type": "string"
+    },
+    "Format": {
+      "enum": [
+        "cjs",
+        "esm",
+        "iife"
+      ],
+      "type": "string"
+    },
+    "GcsBackendProps": {
       "properties": {
         "accessToken": {
           "type": "string"
@@ -445,6 +448,145 @@
         },
         "prefix": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Loader": {
+      "enum": [
+        "base64",
+        "binary",
+        "css",
+        "dataurl",
+        "default",
+        "file",
+        "js",
+        "json",
+        "jsx",
+        "text",
+        "ts",
+        "tsx"
+      ],
+      "type": "string"
+    },
+    "LocalBackendProps": {
+      "properties": {
+        "path": {
+          "default": "- defaults to terraform.${stackId}.tfstate",
+          "description": "(experimental) Path where the state file is stored.",
+          "type": "string"
+        },
+        "workspaceDir": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LogLevel": {
+      "enum": [
+        "debug",
+        "error",
+        "info",
+        "silent",
+        "verbose",
+        "warning"
+      ],
+      "type": "string"
+    },
+    "Partial<BaseConfig>": {
+      "properties": {
+        "buildConfig": {
+          "properties": {
+            "dir": {
+              "type": "string"
+            },
+            "esbuildOptions": {
+              "$ref": "#/definitions/BuildOptions"
+            },
+            "outDir": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "cloud": {
+          "properties": {
+            "gcp": {
+              "properties": {
+                "project": {
+                  "type": "string"
+                },
+                "region": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "runtimeEnvironmentVariables": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "secretVariableNames": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "tfConfig": {
+          "properties": {
+            "backend": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/GcsBackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "gcs"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/LocalBackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "local"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "backendOptions": {
+                      "$ref": "#/definitions/S3BackendProps"
+                    },
+                    "type": {
+                      "enum": [
+                        "s3"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"
@@ -469,6 +611,89 @@
       "type": "object"
     },
     "Record<string,string>": {
+      "type": "object"
+    },
+    "S3BackendProps": {
+      "properties": {
+        "accessKey": {
+          "type": "string"
+        },
+        "acl": {
+          "type": "string"
+        },
+        "assumeRolePolicy": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "dynamodbEndpoint": {
+          "type": "string"
+        },
+        "dynamodbTable": {
+          "type": "string"
+        },
+        "encrypt": {
+          "type": "boolean"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "externalId": {
+          "type": "string"
+        },
+        "forcePathStyle": {
+          "type": "boolean"
+        },
+        "iamEndpoint": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "kmsKeyId": {
+          "type": "string"
+        },
+        "maxRetries": {
+          "type": "number"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "roleArn": {
+          "type": "string"
+        },
+        "secretKey": {
+          "type": "string"
+        },
+        "sessionName": {
+          "type": "string"
+        },
+        "sharedCredentialsFile": {
+          "type": "string"
+        },
+        "skipCredentialsValidation": {
+          "type": "boolean"
+        },
+        "skipMetadataApiCheck": {
+          "type": "boolean"
+        },
+        "sseCustomerKey": {
+          "type": "string"
+        },
+        "stsEndpoint": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "workspaceKeyPrefix": {
+          "type": "string"
+        }
+      },
       "type": "object"
     },
     "StdinOptions": {
@@ -503,7 +728,7 @@
     },
     "envOverrides": {
       "additionalProperties": {
-        "$ref": "#/definitions/BaseConfig"
+        "$ref": "#/definitions/Partial<BaseConfig>"
       },
       "type": "object"
     }
