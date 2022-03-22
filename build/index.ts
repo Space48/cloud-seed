@@ -1,15 +1,7 @@
 import { resolve } from "path";
 import { mkdirSync } from "fs";
 import { Construct } from "constructs";
-import {
-  App,
-  GcsBackend,
-  GcsBackendProps,
-  LocalBackend,
-  LocalBackendProps,
-  S3Backend,
-  S3BackendProps,
-} from "cdktf";
+import { App, GcsBackend, LocalBackend, S3Backend } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
 import bundle from "./esbuild/bundle";
 import { BaseConfig, getRootConfig, RootConfig } from "../utils/rootConfig";
@@ -45,8 +37,8 @@ export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: Const
     environment: buildOpts.environment ?? "dev",
     project: options.cloud.gcp.project,
     region: options.cloud.gcp.region,
-    envVars: options.envVars,
-    secretNames: options.secretNames,
+    envVars: options.runtimeEnvironmentVariables,
+    secretNames: options.secretVariableNames,
   });
 
   switch (options.tfConfig.backend?.type) {
@@ -106,13 +98,17 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
       esbuildOptions: (envSpecificRoot?.buildConfig?.esbuildOptions ??
         defaultRoot?.buildConfig?.esbuildOptions) as BuildOptions | undefined,
     },
-    envVars: Object.fromEntries(
-      Object.entries(envSpecificRoot?.envVars ?? defaultRoot?.envVars ?? {})
+    runtimeEnvironmentVariables: Object.fromEntries(
+      Object.entries(
+        envSpecificRoot?.runtimeEnvironmentVariables ??
+          defaultRoot?.runtimeEnvironmentVariables ??
+          {},
+      )
         .map(([key, value]) => [key, typeof value === "string" ? value : ""])
         .filter(([, value]) => value.length),
     ),
-    secretNames: (envSpecificRoot?.secretNames ?? defaultRoot?.secretNames)?.filter(
-      (name): name is string => typeof name === "string",
-    ),
+    secretVariableNames: (
+      envSpecificRoot?.secretVariableNames ?? defaultRoot?.secretVariableNames
+    )?.filter((name): name is string => typeof name === "string"),
   };
 }
