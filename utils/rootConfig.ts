@@ -48,7 +48,7 @@ export interface BaseConfig {
 
 export interface RootConfig {
   default?: BaseConfig;
-  envOverrides?: {
+  environmentOverrides?: {
     [key: string]: Partial<BaseConfig>;
   };
 }

@@ -1,6 +1,5 @@
 import { resolve } from "path";
 import { mkdirSync } from "fs";
-import { Construct } from "constructs";
 import { App, GcsBackend, LocalBackend, S3Backend } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
 import bundle from "./esbuild/bundle";
@@ -16,7 +15,7 @@ export type BuildOpts = {
   environment: string;
 };
 
-export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: Construct } => {
+export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App } => {
   const rootConfig = getRootConfig(buildOpts.rootDir ?? ".");
 
   const options = mergeConfig(rootConfig, buildOpts);
@@ -63,8 +62,10 @@ export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: Const
 
 function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOpts>): BaseConfig {
   const envSpecificRoot =
-    cmdOpts.environment && rootOpts.envOverrides && rootOpts.envOverrides[cmdOpts.environment]
-      ? rootOpts.envOverrides[cmdOpts.environment]
+    cmdOpts.environment &&
+    rootOpts.environmentOverrides &&
+    rootOpts.environmentOverrides[cmdOpts.environment]
+      ? rootOpts.environmentOverrides[cmdOpts.environment]
       : undefined;
   const defaultRoot = rootOpts.default;
   const dir = resolve(

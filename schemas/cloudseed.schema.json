@@ -446,6 +446,15 @@
         "encryptionKey": {
           "type": "string"
         },
+        "impersonateServiceAccount": {
+          "type": "string"
+        },
+        "impersonateServiceAccountDelegates": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "prefix": {
           "type": "string"
         }
@@ -473,7 +482,7 @@
       "properties": {
         "path": {
           "default": "- defaults to terraform.${stackId}.tfstate",
-          "description": "(experimental) Path where the state file is stored.",
+          "description": "Path where the state file is stored.",
           "type": "string"
         },
         "workspaceDir": {
@@ -726,7 +735,7 @@
     "default": {
       "$ref": "#/definitions/BaseConfig"
     },
-    "envOverrides": {
+    "environmentOverrides": {
       "additionalProperties": {
         "$ref": "#/definitions/Partial<BaseConfig>"
       },

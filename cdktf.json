@@ -2,7 +2,7 @@
   "language": "typescript",
   "app": "node dist/bin/entrypoint.js build --env $ENVIRONMENT",
   "terraformProviders": [
-    "google@~>4.13.0",
+    "google@~>4.15.0",
     "archive@~>2.2.0"
   ],
   "context": {
