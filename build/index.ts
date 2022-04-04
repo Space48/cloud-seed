@@ -1,10 +1,11 @@
 import { resolve } from "path";
-import { existsSync, mkdirSync, rmdirSync } from "fs";
-import { App, GcsBackend, GcsBackendProps, LocalBackend } from "cdktf";
+import { mkdirSync } from "fs";
+import { App, GcsBackend, LocalBackend, S3Backend } from "cdktf";
 import GcpStack from "../stacks/gcp/GcpStack";
 import bundle from "./esbuild/bundle";
-import { BaseConfig, DeepPartial, getRootConfig, RootConfig } from "../utils/rootConfig";
+import { BaseConfig, getRootConfig, RootConfig } from "../utils/rootConfig";
 import { BuildOptions } from "esbuild";
+import { DeepPartial } from "../utils/types";
 
 export type BuildOpts = {
   rootDir: string;
@@ -14,7 +15,7 @@ export type BuildOpts = {
   environment: string;
 };
 
-export default (buildOpts: Partial<BuildOpts>) => {
+export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App } => {
   const rootConfig = getRootConfig(buildOpts.rootDir ?? ".");
 
   const options = mergeConfig(rootConfig, buildOpts);
@@ -22,9 +23,6 @@ export default (buildOpts: Partial<BuildOpts>) => {
   const buildDir = resolve(options.buildConfig.dir);
   const buildOutDir = resolve(options.buildConfig.outDir);
 
-  if (existsSync(buildOutDir)) {
-    rmdirSync(buildOutDir, { recursive: true });
-  }
   mkdirSync(buildOutDir, { recursive: true });
 
   // Run bundler.
@@ -38,33 +36,48 @@ export default (buildOpts: Partial<BuildOpts>) => {
     environment: buildOpts.environment ?? "dev",
     project: options.cloud.gcp.project,
     region: options.cloud.gcp.region,
-    envVars: options.envVars,
-    secretNames: options.secretNames,
+    envVars: options.runtimeEnvironmentVariables,
+    secretNames: options.secretVariableNames,
   });
 
-  // If bucket is defined,
-  // then configure the remote backend where state will be stored,
-  // else use a local backend.
-  options.tfConfig.backend.type.toLowerCase() === "gcs"
-    ? new GcsBackend(stack, {
-        bucket: options.tfConfig.backend.backendOptions?.bucket!,
-        ...options.tfConfig.backend.backendOptions,
-      })
-    : new LocalBackend(stack, {
-        path: buildOutDir,
-      });
+  switch (options.tfConfig.backend?.type) {
+    case "gcs":
+      new GcsBackend(stack, options.tfConfig.backend.backendOptions);
+      break;
+    case "s3":
+      new S3Backend(stack, options.tfConfig.backend.backendOptions);
+      break;
+    case "local":
+      new LocalBackend(stack, options.tfConfig.backend.backendOptions);
+      break;
+    default:
+      new LocalBackend(stack, { path: buildOutDir });
+      break;
+  }
 
   app.synth();
 
-  console.log("Success!");
+  return { config: options, app };
 };
 
 function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOpts>): BaseConfig {
   const envSpecificRoot =
-    cmdOpts.environment && rootOpts.envOverrides && rootOpts.envOverrides[cmdOpts.environment]
-      ? rootOpts.envOverrides[cmdOpts.environment]
+    cmdOpts.environment &&
+    rootOpts.environmentOverrides &&
+    rootOpts.environmentOverrides[cmdOpts.environment]
+      ? rootOpts.environmentOverrides[cmdOpts.environment]
       : undefined;
   const defaultRoot = rootOpts.default;
+  const dir = resolve(
+    cmdOpts.srcDir ?? envSpecificRoot?.buildConfig?.dir ?? defaultRoot?.buildConfig?.dir ?? "src",
+  );
+  const outDir = resolve(
+    cmdOpts.outDir ??
+      envSpecificRoot?.buildConfig?.outDir ??
+      defaultRoot?.buildConfig?.outDir ??
+      ".build",
+  );
+
   return {
     cloud: {
       gcp: {
@@ -74,36 +87,29 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
       },
     },
     tfConfig: {
-      backend: {
-        type:
-          envSpecificRoot?.tfConfig?.backend?.type ??
-          defaultRoot?.tfConfig?.backend?.type ??
-          "local",
-        backendOptions: (envSpecificRoot?.tfConfig?.backend?.backendOptions ??
-          defaultRoot?.tfConfig?.backend?.backendOptions) as Partial<GcsBackendProps> | undefined,
+      backend: ((envSpecificRoot?.tfConfig?.backend ??
+        defaultRoot?.tfConfig?.backend) as BaseConfig["tfConfig"]["backend"]) ?? {
+        type: "local",
+        backendOptions: { path: outDir },
       },
     },
     buildConfig: {
-      dir:
-        cmdOpts.srcDir ??
-        envSpecificRoot?.buildConfig?.dir ??
-        defaultRoot?.buildConfig?.dir ??
-        "src",
-      outDir:
-        cmdOpts.outDir ??
-        envSpecificRoot?.buildConfig?.outDir ??
-        defaultRoot?.buildConfig?.outDir ??
-        ".build",
+      dir,
+      outDir,
       esbuildOptions: (envSpecificRoot?.buildConfig?.esbuildOptions ??
-        defaultRoot?.buildConfig?.esbuildOptions) as Partial<BuildOptions> | undefined,
+        defaultRoot?.buildConfig?.esbuildOptions) as BuildOptions | undefined,
     },
-    envVars: Object.fromEntries(
-      Object.entries(envSpecificRoot?.envVars ?? defaultRoot?.envVars ?? {})
+    runtimeEnvironmentVariables: Object.fromEntries(
+      Object.entries(
+        envSpecificRoot?.runtimeEnvironmentVariables ??
+          defaultRoot?.runtimeEnvironmentVariables ??
+          {},
+      )
         .map(([key, value]) => [key, typeof value === "string" ? value : ""])
         .filter(([, value]) => value.length),
     ),
-    secretNames: (envSpecificRoot?.secretNames ?? defaultRoot?.secretNames)?.filter(
-      (name): name is string => typeof name === "string",
-    ),
+    secretVariableNames: (
+      envSpecificRoot?.secretVariableNames ?? defaultRoot?.secretVariableNames
+    )?.filter((name): name is string => typeof name === "string"),
   };
 }

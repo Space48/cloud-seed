@@ -1,14 +1,6 @@
-# Space48 Functions CLI
-
-## BREAKING CHANGES
-
-- Removed `serve` CLI command
-- Removed `ashsmith/bigcommerce` provider
-- Removed `env.json` and `secrets.json`. Now all config is in `cloudseed.json`.
-- Removed certain build command line options, now they are available in `cloudseed.json`.
+# Cloud Seed
 
 ## Using on a project:
-
 
 Add the package as a dev dependency (note you'll need to authenticate with github packages).
 ```
@@ -181,12 +173,12 @@ You can set the cloud seed config by adding a `cloudseed.json` file in the proje
       "dir": "./src",
       "outDir": "./.build",
     },
-    "secretNames": [
+    "secretVariableNames": [
       "apiKey1",
       "apiKey2"
     ]
   },
-  "envOverrides": {
+  "environmentOverrides": {
     "staging": {
       "cloud": {
         "gcp": {
@@ -202,7 +194,7 @@ You can set the cloud seed config by adding a `cloudseed.json` file in the proje
           }
         }
       },
-      "envVars": {
+      "runtimeEnvironmentVariables": {
         "FOO": "Staging1",
         "BAR": "Staging2"
       }
@@ -222,11 +214,52 @@ You can set the cloud seed config by adding a `cloudseed.json` file in the proje
           }
         }
       },
-      "envVars": {
+      "runtimeEnvironmentVariables": {
         "FOO": "Prod1",
         "BAR": "Prod2"
       }
     }
   }
 }
+```
+
+## JavaScript API
+
+This package can also be called via a JS API.
+
+```typescript
+import { build, BaseConfig, GoogleProvider } from "@space48/cloud-seed";
+import { GcsBackend, TerraformStack } from "cdktf";
+import { Construct } from "constructs";
+
+class CustomStack extends TerraformStack {
+  constructor(scope: Construct, id: string, options: BaseConfig) {
+    super(scope, id);
+    options.tfConfig.backend.type === "gcs" && new GcsBackend(this, {
+      bucket: options.tfConfig.backend.backendOptions.bucket,
+      prefix: options.tfConfig.backend.backendOptions.prefix + "-custom-stack",
+    });
+    new GoogleProvider.GoogleProvider(this, "Google", {
+      region: options.cloud.gcp.region,
+      project: options.cloud.gcp.project,
+    });
+
+    /**
+     * Example infrastructure
+     */
+    new GoogleProvider.StorageBucket(this, "CustomBucket", {
+      name: `my-custom-bucket-${process.env.ENVIRONMENT}`,
+      location: options.cloud.gcp.region.toUpperCase(),
+      storageClass: "STANDARD",
+      uniformBucketLevelAccess: true,
+    });
+  }
+}
+
+// build() is the same as per the CLI command, and returns the parsed Cloud Seed config and the app construct
+const { config, app } = build({ environment: process.env.ENVIRONMENT });
+
+new CustomStack(app, "CustomStack", config);
+
+app.synth();
 ```
