@@ -4,6 +4,7 @@ import { Construct } from "constructs";
 import { TerraformStack } from "cdktf";
 import {
   CloudfunctionsFunction,
+  CloudfunctionsFunctionConfig,
   CloudfunctionsFunctionIamMember,
   CloudSchedulerJob,
   ComputeAddress,
@@ -20,7 +21,7 @@ import {
 } from "../../.gen/providers/google";
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
 import { GcpConfig } from "../../runtime";
-import { StackOptions, GcpFunction, FunctionTriggerConfig } from "./types";
+import { StackOptions, GcpFunction } from "./types";
 
 // Name is always defined by the stack, so mark as required.
 type RuntimeConfig = GcpConfig & { name: string };
@@ -150,7 +151,9 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private generateFunctionTriggerConfig(config: RuntimeConfig): FunctionTriggerConfig {
+  private generateFunctionTriggerConfig(
+    config: RuntimeConfig,
+  ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
     if (config.type === "http") {
       return {
         triggerHttp: true,
@@ -180,7 +183,11 @@ export default class GcpStack extends TerraformStack {
     }
 
     return {
-      eventTrigger: { eventType, resource },
+      eventTrigger: {
+        eventType,
+        resource,
+        failurePolicy: config.retryOnFailure ? { retry: config.retryOnFailure } : undefined,
+      },
     };
   }
 

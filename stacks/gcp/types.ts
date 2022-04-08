@@ -13,7 +13,3 @@ export type GcpFunction = GcpConfig & {
   file: string;
   name: string;
 };
-
-export type FunctionTriggerConfig =
-  | { triggerHttp: boolean }
-  | { eventTrigger: { eventType: string; resource: string } };
