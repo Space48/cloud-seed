@@ -10,6 +10,7 @@ export type FunctionConfig = {
   timeout?: number;
   runtime?: "nodejs12" | "nodejs14";
   memory?: number;
+  retryOnFailure?: boolean;
   staticIp?: boolean;
 };
 
