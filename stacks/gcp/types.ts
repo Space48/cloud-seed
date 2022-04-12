@@ -1,4 +1,4 @@
-import { GcpConfig } from "../../runtime";
+import { GcpConfig } from "../../types/runtime";
 
 export type StackOptions = {
   outDir: string;

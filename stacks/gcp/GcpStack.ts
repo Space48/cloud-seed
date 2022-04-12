@@ -20,11 +20,7 @@ import {
   VpcAccessConnector,
 } from "../../.gen/providers/google";
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
-import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction } from "./types";
-
-// Name is always defined by the stack, so mark as required.
-type RuntimeConfig = GcpConfig & { name: string };
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
@@ -79,7 +75,7 @@ export default class GcpStack extends TerraformStack {
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name, {
       name: func.name,
-      runtime: func.runtime ?? "nodejs14",
+      runtime: func.runtime,
       timeout: func.timeout ?? 60,
       sourceArchiveBucket: bucket.name,
       sourceArchiveObject: object.name,
@@ -136,7 +132,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: RuntimeConfig) {
+  private configureHttpFunction(config: GcpFunction) {
     if (config.type !== "http") {
       return;
     }
@@ -152,7 +148,7 @@ export default class GcpStack extends TerraformStack {
   }
 
   private generateFunctionTriggerConfig(
-    config: RuntimeConfig,
+    config: GcpFunction,
   ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
     if (config.type === "http") {
       return {
@@ -248,7 +244,7 @@ export default class GcpStack extends TerraformStack {
     });
   }
 
-  private getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
+  private getFunctions(): GcpFunction[] {
     const contents = readFileSync(join(this.options.outDir, "functions.json"));
     return JSON.parse(contents.toString());
   }
