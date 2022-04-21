@@ -34,8 +34,7 @@ export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App }
   const stack = new GcpStack(app, options.cloud.gcp.project, {
     outDir: buildOutDir,
     environment: buildOpts.environment ?? "dev",
-    project: options.cloud.gcp.project,
-    region: options.cloud.gcp.region,
+    gcpOptions: options.cloud.gcp,
     envVars: options.runtimeEnvironmentVariables,
     secretNames: options.secretVariableNames,
   });
@@ -84,6 +83,14 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
         project: envSpecificRoot?.cloud?.gcp?.project ?? defaultRoot?.cloud?.gcp?.project ?? "",
         region:
           envSpecificRoot?.cloud?.gcp?.region ?? defaultRoot?.cloud?.gcp?.region ?? "europe-west2",
+        sourceCodeStorage: {
+          bucketOptions: {
+            name:
+              envSpecificRoot?.cloud?.gcp?.sourceCodeStorage?.bucketOptions?.name ??
+              defaultRoot?.cloud?.gcp?.sourceCodeStorage?.bucketOptions?.name ??
+              "",
+          },
+        },
       },
     },
     tfConfig: {

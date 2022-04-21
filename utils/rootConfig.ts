@@ -18,6 +18,11 @@ export interface BaseConfig {
     gcp: {
       project: string;
       region: string;
+      sourceCodeStorage?: {
+        bucketOptions?: {
+          name: string;
+        };
+      };
     };
   };
   tfConfig: {
