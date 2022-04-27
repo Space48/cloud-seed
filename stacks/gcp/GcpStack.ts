@@ -39,8 +39,8 @@ export default class GcpStack extends TerraformStack {
 
     // Configure the Google Provider.
     new GoogleProvider(this, "Google", {
-      region: this.options.region,
-      project: this.options.project,
+      project: this.options.gcpOptions.project,
+      region: this.options.gcpOptions.region,
     });
 
     const functions = this.getFunctions();
@@ -50,8 +50,10 @@ export default class GcpStack extends TerraformStack {
       new ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
-        name: `${id}-functions`,
-        location: this.options.region.toUpperCase(),
+        name:
+          options.gcpOptions.sourceCodeStorage?.bucket?.name ??
+          `${options.gcpOptions.project}-functions`,
+        location: this.options.gcpOptions.region.toUpperCase(),
       });
       functions.forEach(func => this.generateFunction(func, bucket));
     }
@@ -87,8 +89,8 @@ export default class GcpStack extends TerraformStack {
       entryPoint: "default",
       environmentVariables: {
         NODE_ENV: this.options.environment,
-        GCP_PROJECT: this.options.project,
-        GCP_REGION: this.options.region,
+        GCP_PROJECT: this.options.gcpOptions.project,
+        GCP_REGION: this.options.gcpOptions.region,
         ...envVars,
       },
 
@@ -116,7 +118,7 @@ export default class GcpStack extends TerraformStack {
         name: func.name,
         schedule: func.schedule,
         pubsubTarget: {
-          topicName: `projects/${this.options.project}/topics/${scheduledTopic.name}`,
+          topicName: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic.name}`,
           data: "c2NoZWR1bGU=",
         },
       });
@@ -195,7 +197,7 @@ export default class GcpStack extends TerraformStack {
     vpcAccessConnectorName: string,
     vpcAccessConnectorCidrRange: string,
   ) {
-    const region = this.options.region;
+    const region = this.options.gcpOptions.region;
     const netName = "static-ip-vpc";
     if (!this.existingStaticIpVpcSubnets.length) {
       const network = new ComputeNetwork(this, netName, {
