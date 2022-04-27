@@ -51,7 +51,7 @@ export default class GcpStack extends TerraformStack {
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
         name:
-          options.gcpOptions.sourceCodeStorage?.bucketOptions?.name ??
+          options.gcpOptions.sourceCodeStorage?.bucket?.name ??
           `${options.gcpOptions.project}-functions`,
         location: this.options.gcpOptions.region.toUpperCase(),
       });

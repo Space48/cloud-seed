@@ -29,7 +29,7 @@
                 },
                 "sourceCodeStorage": {
                   "properties": {
-                    "bucketOptions": {
+                    "bucket": {
                       "properties": {
                         "name": {
                           "type": "string"
@@ -543,7 +543,7 @@
                 },
                 "sourceCodeStorage": {
                   "properties": {
-                    "bucketOptions": {
+                    "bucket": {
                       "properties": {
                         "name": {
                           "type": "string"

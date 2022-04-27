@@ -84,10 +84,10 @@ function mergeConfig(rootOpts: DeepPartial<RootConfig>, cmdOpts: Partial<BuildOp
         region:
           envSpecificRoot?.cloud?.gcp?.region ?? defaultRoot?.cloud?.gcp?.region ?? "europe-west2",
         sourceCodeStorage: {
-          bucketOptions: {
+          bucket: {
             name:
-              envSpecificRoot?.cloud?.gcp?.sourceCodeStorage?.bucketOptions?.name ??
-              defaultRoot?.cloud?.gcp?.sourceCodeStorage?.bucketOptions?.name ??
+              envSpecificRoot?.cloud?.gcp?.sourceCodeStorage?.bucket?.name ??
+              defaultRoot?.cloud?.gcp?.sourceCodeStorage?.bucket?.name ??
               "",
           },
         },

@@ -19,7 +19,7 @@ export interface BaseConfig {
       project: string;
       region: string;
       sourceCodeStorage?: {
-        bucketOptions?: {
+        bucket?: {
           name: string;
         };
       };
