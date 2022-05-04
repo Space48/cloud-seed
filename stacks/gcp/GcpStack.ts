@@ -128,8 +128,7 @@ export default class GcpStack extends TerraformStack {
     if (func.staticIp) {
       const vpcAccessConnectorCidrRange = "10.1.1.0/28";
       const vpcAccessConnectorName =
-        "static-ip-connector-" +
-        vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
+        "connector-" + vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
       cloudFunc.vpcConnector = vpcAccessConnectorName;
       cloudFunc.vpcConnectorEgressSettings = "ALL_TRAFFIC";
       if (!this.existingStaticIpVpcSubnets.length) {
