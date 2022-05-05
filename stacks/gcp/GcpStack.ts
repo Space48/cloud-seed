@@ -20,11 +20,7 @@ import {
   VpcAccessConnector,
 } from "../../.gen/providers/google";
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
-import { GcpConfig } from "../../runtime";
 import { StackOptions, GcpFunction } from "./types";
-
-// Name is always defined by the stack, so mark as required.
-type RuntimeConfig = GcpConfig & { name: string };
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
@@ -50,9 +46,9 @@ export default class GcpStack extends TerraformStack {
       new ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
-        name:
-          options.gcpOptions.sourceCodeStorage?.bucket?.name ??
-          `${options.gcpOptions.project}-functions`,
+        name: options.gcpOptions.sourceCodeStorage?.bucket?.name.length
+          ? options.gcpOptions.sourceCodeStorage.bucket.name
+          : `${options.gcpOptions.project}-functions`,
         location: this.options.gcpOptions.region.toUpperCase(),
       });
       functions.forEach(func => this.generateFunction(func, bucket));
@@ -137,7 +133,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: RuntimeConfig) {
+  private configureHttpFunction(config: GcpFunction) {
     if (config.type !== "http") {
       return;
     }
@@ -153,7 +149,7 @@ export default class GcpStack extends TerraformStack {
   }
 
   private generateFunctionTriggerConfig(
-    config: RuntimeConfig,
+    config: GcpFunction,
   ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
     if (config.type === "http") {
       return {
@@ -172,14 +168,17 @@ export default class GcpStack extends TerraformStack {
         break;
       case "firestore":
         eventType = `providers/cloud.firestore/eventTypes/document.${
-          config.firestoreEvent ?? "write"
+          config.firestoreEvent?.length ? config.firestoreEvent : "write"
         }`;
         resource = config.document;
         break;
       case "storage":
-        eventType = `google.storage.object.${config.storageEvent ?? "finalize"}`;
-        resource =
-          config.bucket.environmentSpecific?.[this.options.environment] ?? config.bucket.default;
+        eventType = `google.storage.object.${
+          config.storageEvent?.length ? config.storageEvent : "finalize"
+        }`;
+        resource = config.bucket.environmentSpecific?.[this.options.environment]?.length
+          ? config.bucket.environmentSpecific[this.options.environment]
+          : config.bucket.default;
         break;
     }
 
@@ -249,7 +248,7 @@ export default class GcpStack extends TerraformStack {
     });
   }
 
-  private getFunctions(): (RuntimeConfig & { file: string; name: string })[] {
+  private getFunctions(): GcpFunction[] {
     const contents = readFileSync(join(this.options.outDir, "functions.json"));
     return JSON.parse(contents.toString());
   }

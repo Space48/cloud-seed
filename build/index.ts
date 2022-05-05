@@ -16,7 +16,7 @@ export type BuildOpts = {
 };
 
 export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App } => {
-  const rootConfig = getRootConfig(buildOpts.rootDir ?? ".");
+  const rootConfig = getRootConfig(buildOpts.rootDir?.length ? buildOpts.rootDir : ".");
 
   const options = mergeConfig(rootConfig, buildOpts);
 
@@ -33,7 +33,7 @@ export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App }
 
   const stack = new GcpStack(app, options.cloud.gcp.project, {
     outDir: buildOutDir,
-    environment: buildOpts.environment ?? "dev",
+    environment: buildOpts.environment?.length ? buildOpts.environment : "dev",
     gcpOptions: options.cloud.gcp,
     envVars: options.runtimeEnvironmentVariables,
     secretNames: options.secretVariableNames,

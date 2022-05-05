@@ -1,4 +1,4 @@
-import { GcpConfig } from "../../runtime";
+import { GcpConfig } from "../../types/runtime";
 import { BaseConfig } from "../../utils/rootConfig";
 
 export type StackOptions = {
