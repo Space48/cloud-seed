@@ -46,9 +46,9 @@ export default class GcpStack extends TerraformStack {
       new ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
-        name: options.gcpOptions.sourceCodeStorage?.bucket?.name.length
-          ? options.gcpOptions.sourceCodeStorage.bucket.name
-          : `${options.gcpOptions.project}-functions`,
+        name:
+          options.gcpOptions.sourceCodeStorage?.bucket?.name ||
+          `${options.gcpOptions.project}-functions`,
         location: this.options.gcpOptions.region.toUpperCase(),
       });
       functions.forEach(func => this.generateFunction(func, bucket));
@@ -168,17 +168,14 @@ export default class GcpStack extends TerraformStack {
         break;
       case "firestore":
         eventType = `providers/cloud.firestore/eventTypes/document.${
-          config.firestoreEvent?.length ? config.firestoreEvent : "write"
+          config.firestoreEvent || "write"
         }`;
         resource = config.document;
         break;
       case "storage":
-        eventType = `google.storage.object.${
-          config.storageEvent?.length ? config.storageEvent : "finalize"
-        }`;
-        resource = config.bucket.environmentSpecific?.[this.options.environment]?.length
-          ? config.bucket.environmentSpecific[this.options.environment]
-          : config.bucket.default;
+        eventType = `google.storage.object.${config.storageEvent || "finalize"}`;
+        resource =
+          config.bucket.environmentSpecific?.[this.options.environment] || config.bucket.default;
         break;
     }
 
