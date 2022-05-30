@@ -12,8 +12,8 @@ export type FunctionConfig = {
   memory?: number;
   retryOnFailure?: boolean;
   staticIp?: boolean;
-  maxInstances?: number;
-  minInstances?: number;
+  maxInstances?: number | undefined;
+  minInstances?: number | undefined;
 };
 
 export type HttpConfig = {
