@@ -83,6 +83,8 @@ export default class GcpStack extends TerraformStack {
       sourceArchiveObject: object.name,
       availableMemoryMb: func.memory ?? 256,
       entryPoint: "default",
+      maxInstances: func.maxInstances,
+      minInstances: func.minInstances,
       environmentVariables: {
         NODE_ENV: this.options.environment,
         GCP_PROJECT: this.options.gcpOptions.project,
