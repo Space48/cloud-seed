@@ -57,7 +57,7 @@ const bundle = (
         const { region, project } = cloudConfig.gcp;
         return {
           scope: config.webhook.scope,
-          destination: getWebHookGCPFunctionUrl(region, project),
+          destination: getWebHookGCPFunctionUrl(region, project, "bigcommerce"),
         };
       }
       // add other cloud providers here
@@ -148,7 +148,7 @@ function mapNode(node: ts.Node): any {
   return "UNSUPPORTED";
 }
 
-function getWebHookGCPFunctionUrl(region: string, project: string) {
-  return `https://${region}-${project}.cloudfunctions.net/webhooks-webhookFunction`;
-  // add other cloud providers here
+function getWebHookGCPFunctionUrl(region: string, project: string, type: "bigcommerce") {
+  if (type === "bigcommerce")
+    return `https://${region}-${project}.cloudfunctions.net/webhooks-bigcommerceWebhookPublishEvent`;
 }
