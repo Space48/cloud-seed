@@ -46,12 +46,21 @@ export type StorageConfig = {
   storageEvent?: "finalize" | "delete" | "archive" | "metadataUpdate";
 } & FunctionConfig;
 
+export type WebhookConfig = {
+  type: "webhook";
+  webhook: {
+    type: "bigcommerce";
+    scope: string;
+  };
+} & FunctionConfig;
+
 export type GcpConfig = (
   | HttpConfig
   | EventConfig
   | ScheduleConfig
   | FirestoreConfig
   | StorageConfig
+  | WebhookConfig
 ) & {
   cloud: "gcp";
   name?: string;

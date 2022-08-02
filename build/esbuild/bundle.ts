@@ -1,10 +1,16 @@
 import ts from "typescript";
 import { sync } from "glob";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { BuildOptions, buildSync } from "esbuild";
 import { join, relative } from "path";
+import { BaseConfig } from "../../utils/rootConfig";
 
-const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptions>) => {
+const bundle = (
+  dir: string,
+  outDir: string,
+  cloudConfig: BaseConfig["cloud"],
+  esbuildOptions?: Partial<BuildOptions>,
+) => {
   const files = sync(join(dir, "**/*.ts"));
 
   let runtimeConfig: any = null;
@@ -30,6 +36,7 @@ const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptio
   });
 
   writeFileSync(join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
+
   runtimeConfigs.forEach(config => {
     buildSync({
       entryPoints: [config.file],
@@ -42,6 +49,27 @@ const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptio
       ...esbuildOptions,
     });
   });
+
+  const bigcommerceWebhooks = runtimeConfigs
+    .filter(config => config.type === "webhook" && config.webhook.type === "bigcommerce")
+    .map(config => {
+      if (config.cloud === "gcp") {
+        const { region, project } = cloudConfig.gcp;
+        return {
+          scope: config.webhook.scope,
+          destination: getWebHookGCPFunctionUrl(region, project),
+        };
+      }
+      // add other cloud providers here
+    });
+
+  mkdirSync(join(outDir, "webhooks"));
+
+  if (bigcommerceWebhooks.length)
+    writeFileSync(
+      join(outDir, "webhooks", "bigcommerceWebhooks.json"),
+      JSON.stringify(bigcommerceWebhooks, null, 2),
+    );
 };
 export default bundle;
 
@@ -118,4 +146,9 @@ function mapNode(node: ts.Node): any {
   }
 
   return "UNSUPPORTED";
+}
+
+function getWebHookGCPFunctionUrl(region: string, project: string) {
+  return `https://${region}-${project}.cloudfunctions.net/webhooks-webhookFunction`;
+  // add other cloud providers here
 }
