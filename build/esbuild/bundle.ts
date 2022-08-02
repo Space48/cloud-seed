@@ -11,7 +11,7 @@ const bundle = (
   cloudConfig: BaseConfig["cloud"],
   esbuildOptions?: Partial<BuildOptions>,
 ) => {
-  const files = sync(join(dir, "**/*.ts"));
+  const files = [...sync(join(dir, "**/*.ts")), ...sync(join("webhooks", "**/*.ts"))];
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
