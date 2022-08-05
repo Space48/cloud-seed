@@ -50,25 +50,24 @@ const bundle = (
     });
   });
 
-  const bigcommerceWebhooks = runtimeConfigs
+  const bigcommerceWebhookScopes = runtimeConfigs
     .filter(config => config.type === "webhook" && config.webhook.type === "bigcommerce")
-    .map(config => {
-      if (config.cloud === "gcp") {
-        const { region, project } = cloudConfig.gcp;
-        return {
-          scope: config.webhook.scope,
-          destination: getWebHookGCPFunctionUrl(region, project, "bigcommerce"),
-        };
-      }
-      // add other cloud providers here
-    });
+    .map(config => config.webhook.scope)
+    .filter((scope, index, scopes) => scopes.indexOf(scope) === index);
 
   mkdirSync(join(outDir, "webhooks"));
 
-  if (bigcommerceWebhooks.length)
+  if (bigcommerceWebhookScopes.length)
     writeFileSync(
       join(outDir, "webhooks", "bigcommerceWebhooks.json"),
-      JSON.stringify(bigcommerceWebhooks, null, 2),
+      JSON.stringify(
+        {
+          destination: getWebHookGCPFunctionUrl(cloudConfig.gcp, "bigcommerce"),
+          scopes: bigcommerceWebhookScopes,
+        },
+        null,
+        2,
+      ),
     );
 };
 export default bundle;
@@ -148,7 +147,22 @@ function mapNode(node: ts.Node): any {
   return "UNSUPPORTED";
 }
 
-function getWebHookGCPFunctionUrl(region: string, project: string, type: "bigcommerce") {
+function findWebhookPublisherFunction() {
+  const files = sync(join("webhooks", "**/*.ts"));
+  let sourceFile = "";
+  files.some(file => {
+    const fileContentsBuffer = readFileSync(file);
+    const [fileFirstLine] = fileContentsBuffer.toString().split(/\r?\n/);
+    if (fileFirstLine === "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//") {
+      return (sourceFile = file);
+    }
+  });
+  return sourceFile;
+}
+
+function getWebHookGCPFunctionUrl(GcpConfig: BaseConfig["cloud"]["gcp"], type: "bigcommerce") {
   if (type === "bigcommerce")
-    return `https://${region}-${project}.cloudfunctions.net/webhooks-bigcommerceWebhookPublishEvent`;
+    return `https://${GcpConfig.region}-${
+      GcpConfig.project
+    }.cloudfunctions.net/${generateFunctionName(findWebhookPublisherFunction())}`;
 }

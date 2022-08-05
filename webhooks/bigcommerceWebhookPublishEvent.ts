@@ -1,6 +1,9 @@
+//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//
+
 import { HttpFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "../types/runtime";
-import { getPubSubTopicName, publish } from "../utils/pubsub";
+import { getPubSubTopicName, publish } from "../utils/gcp/pubsub";
+import { WebhookPayload } from "./types";
 
 const bigcommerceWebhookPublishEvent: HttpFunction = async (request, response) => {
   const payload: WebhookPayload = request.body;
@@ -26,20 +29,3 @@ export const runtimeConfig: GcpConfig = {
   type: "http",
   public: true,
 };
-
-export interface WebhookPayload {
-  store_id: number;
-  producer: string;
-  scope: string;
-  data: {
-    type: string;
-    id: number;
-    orderId?: number;
-    status?: {
-      previous_status_id: number;
-      new_status_id: number;
-    };
-  };
-  hash: string;
-  created_at: number;
-}
