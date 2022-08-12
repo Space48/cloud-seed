@@ -96,7 +96,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     if (func.type === "http") {
-      this.configureHttpFunction(func);
+      this.configureHttpFunction(func, cloudFunc);
     }
 
     // Create pubsub topics if they don't exist already.
@@ -135,7 +135,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: GcpFunction) {
+  private configureHttpFunction(config: GcpFunction, func: CloudfunctionsFunction) {
     if (config.type !== "http") {
       return;
     }
@@ -143,7 +143,7 @@ export default class GcpStack extends TerraformStack {
     // Configure if the http function is publically invokable.
     if (config.public) {
       new CloudfunctionsFunctionIamMember(this, config.name + "-http-invoker", {
-        cloudFunction: config.name,
+        cloudFunction: func.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
       });
