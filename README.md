@@ -228,7 +228,8 @@ You can set the cloud seed config by adding a `cloudseed.json` file in the proje
 This package can also be called via a JS API.
 
 ```typescript
-import { build, BaseConfig, GoogleProvider } from "@space48/cloud-seed";
+import { build, BaseConfig } from "@space48/cloud-seed";
+import GoogleProvider from "@cdktf/provider-google";
 import { GcsBackend, TerraformStack } from "cdktf";
 import { Construct } from "constructs";
 

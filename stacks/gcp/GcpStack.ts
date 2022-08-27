@@ -18,8 +18,8 @@ import {
   StorageBucket,
   StorageBucketObject,
   VpcAccessConnector,
-} from "../../.gen/providers/google";
-import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
+} from "@cdktf/provider-google";
+import { ArchiveProvider, DataArchiveFile } from "@cdktf/provider-archive";
 import { StackOptions, GcpFunction } from "./types";
 
 export default class GcpStack extends TerraformStack {
