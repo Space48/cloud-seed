@@ -126,8 +126,6 @@ export default fn;
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "queue",
-  // By defining the queueName it will create the queue for you.
-  queueName: "hello-world",
 };
 ```
 

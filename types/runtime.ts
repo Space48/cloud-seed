@@ -36,7 +36,6 @@ export type ScheduleConfig = {
 
 export type QueueConfig = {
   type: "queue";
-  queueName: string;
   queueConfig?: {
     maxDispatchesPerSecond?: number;
     maxConcurrentDispatches?: number;

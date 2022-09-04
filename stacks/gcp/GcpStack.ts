@@ -126,9 +126,9 @@ export default class GcpStack extends TerraformStack {
     }
 
     // Create Cloud Tasks queue if it doesn't exist already
-    if (func.type === "queue" && !this.existingQueues.includes(func.queueName)) {
-      new CloudTasksQueue(this, func.queueName, {
-        name: func.queueName,
+    if (func.type === "queue" && !this.existingQueues.includes(func.name)) {
+      new CloudTasksQueue(this, func.name + "-queue", {
+        name: func.name,
         location: this.options.gcpOptions.region,
         rateLimits: {
           maxConcurrentDispatches: func.queueConfig?.maxConcurrentDispatches,
@@ -142,7 +142,7 @@ export default class GcpStack extends TerraformStack {
           maxRetryDuration: func.queueConfig?.maxRetryDuration,
         },
       });
-      this.existingQueues.push(func.queueName);
+      this.existingQueues.push(func.name);
     }
 
     // Configure static IP constraint
