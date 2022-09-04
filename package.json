@@ -28,8 +28,8 @@
   "author": "Ash Smith <ash@space48.com>",
   "license": "ISC",
   "dependencies": {
-    "@cdktf/provider-archive": "^2.0.35",
-    "@cdktf/provider-google": "^2.0.10",
+    "@cdktf/provider-archive": "^2.0.46",
+    "@cdktf/provider-google": "^2.0.15",
     "arg": "^5.0.2",
     "cdktf": "^0.12.2",
     "cdktf-cli": "^0.12.2",
