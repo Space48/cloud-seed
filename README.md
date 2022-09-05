@@ -263,3 +263,9 @@ new CustomStack(app, "CustomStack", config);
 
 app.synth();
 ```
+
+# Licence and acknowledgements
+
+This project is licenced under the MIT License.
+
+The authors wish to acknowledge our collaboration with the open-source Cloud Seed project by user `MNahad`, and that certain features in our project are derived from it.

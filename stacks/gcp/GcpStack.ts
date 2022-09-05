@@ -35,8 +35,8 @@ export default class GcpStack extends TerraformStack {
 
     // Configure the Google Provider.
     new GoogleProvider(this, "Google", {
-      region: this.options.region,
-      project: this.options.project,
+      project: this.options.gcpOptions.project,
+      region: this.options.gcpOptions.region,
     });
 
     const functions = this.getFunctions();
@@ -46,8 +46,10 @@ export default class GcpStack extends TerraformStack {
       new ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
       const bucket = new StorageBucket(this, "FuncSourceBucket", {
-        name: `${id}-functions`,
-        location: this.options.region.toUpperCase(),
+        name:
+          options.gcpOptions.sourceCodeStorage?.bucket?.name ||
+          `${options.gcpOptions.project}-functions`,
+        location: this.options.gcpOptions.region.toUpperCase(),
       });
       functions.forEach(func => this.generateFunction(func, bucket));
     }
@@ -81,10 +83,12 @@ export default class GcpStack extends TerraformStack {
       sourceArchiveObject: object.name,
       availableMemoryMb: func.memory ?? 256,
       entryPoint: "default",
+      maxInstances: func.maxInstances,
+      minInstances: func.minInstances,
       environmentVariables: {
         NODE_ENV: this.options.environment,
-        GCP_PROJECT: this.options.project,
-        GCP_REGION: this.options.region,
+        GCP_PROJECT: this.options.gcpOptions.project,
+        GCP_REGION: this.options.gcpOptions.region,
         ...envVars,
       },
 
@@ -92,7 +96,7 @@ export default class GcpStack extends TerraformStack {
     });
 
     if (func.type === "http") {
-      this.configureHttpFunction(func);
+      this.configureHttpFunction(func, cloudFunc);
     }
 
     // Create pubsub topics if they don't exist already.
@@ -112,7 +116,7 @@ export default class GcpStack extends TerraformStack {
         name: func.name,
         schedule: func.schedule,
         pubsubTarget: {
-          topicName: `projects/${this.options.project}/topics/${scheduledTopic.name}`,
+          topicName: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic.name}`,
           data: "c2NoZWR1bGU=",
         },
       });
@@ -122,8 +126,7 @@ export default class GcpStack extends TerraformStack {
     if (func.staticIp) {
       const vpcAccessConnectorCidrRange = "10.1.1.0/28";
       const vpcAccessConnectorName =
-        "static-ip-connector-" +
-        vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
+        "connector-" + vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
       cloudFunc.vpcConnector = vpcAccessConnectorName;
       cloudFunc.vpcConnectorEgressSettings = "ALL_TRAFFIC";
       if (!this.existingStaticIpVpcSubnets.length) {
@@ -132,7 +135,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: GcpFunction) {
+  private configureHttpFunction(config: GcpFunction, func: CloudfunctionsFunction) {
     if (config.type !== "http") {
       return;
     }
@@ -140,7 +143,7 @@ export default class GcpStack extends TerraformStack {
     // Configure if the http function is publically invokable.
     if (config.public) {
       new CloudfunctionsFunctionIamMember(this, config.name + "-http-invoker", {
-        cloudFunction: config.name,
+        cloudFunction: func.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
       });
@@ -167,14 +170,14 @@ export default class GcpStack extends TerraformStack {
         break;
       case "firestore":
         eventType = `providers/cloud.firestore/eventTypes/document.${
-          config.firestoreEvent ?? "write"
+          config.firestoreEvent || "write"
         }`;
         resource = config.document;
         break;
       case "storage":
-        eventType = `google.storage.object.${config.storageEvent ?? "finalize"}`;
+        eventType = `google.storage.object.${config.storageEvent || "finalize"}`;
         resource =
-          config.bucket.environmentSpecific?.[this.options.environment] ?? config.bucket.default;
+          config.bucket.environmentSpecific?.[this.options.environment] || config.bucket.default;
         break;
     }
 
@@ -191,7 +194,7 @@ export default class GcpStack extends TerraformStack {
     vpcAccessConnectorName: string,
     vpcAccessConnectorCidrRange: string,
   ) {
-    const region = this.options.region;
+    const region = this.options.gcpOptions.region;
     const netName = "static-ip-vpc";
     if (!this.existingStaticIpVpcSubnets.length) {
       const network = new ComputeNetwork(this, netName, {

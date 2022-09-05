@@ -26,6 +26,19 @@
                 },
                 "region": {
                   "type": "string"
+                },
+                "sourceCodeStorage": {
+                  "properties": {
+                    "bucket": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"
@@ -527,6 +540,19 @@
                 },
                 "region": {
                   "type": "string"
+                },
+                "sourceCodeStorage": {
+                  "properties": {
+                    "bucket": {
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"

@@ -1,10 +1,10 @@
 import { GcpConfig } from "../../types/runtime";
+import { BaseConfig } from "../../utils/rootConfig";
 
 export type StackOptions = {
   outDir: string;
   environment: string;
-  project: string;
-  region: string;
+  gcpOptions: BaseConfig["cloud"]["gcp"];
   envVars?: Record<string, string>;
   secretNames?: string[];
 };
