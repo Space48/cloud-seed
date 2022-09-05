@@ -8,7 +8,7 @@ export enum CloudServices {
 export type FunctionConfig = {
   // timeout in seconds. default of 60, max of 540.
   timeout?: number;
-  runtime?: "nodejs12" | "nodejs14";
+  runtime: string;
   memory?: number;
   retryOnFailure?: boolean;
   staticIp?: boolean;

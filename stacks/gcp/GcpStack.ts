@@ -77,7 +77,7 @@ export default class GcpStack extends TerraformStack {
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name, {
       name: func.name,
-      runtime: func.runtime ?? "nodejs14",
+      runtime: func.runtime,
       timeout: func.timeout ?? 60,
       sourceArchiveBucket: bucket.name,
       sourceArchiveObject: object.name,
