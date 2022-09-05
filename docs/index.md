@@ -55,6 +55,7 @@ More information, see:
 - [Creating HTTP Functions](./http.md)
 - [Creating PubSub Topics and Subscriptions](./pubsub.md)
 - [Creating Scheduled Functions](./scheduled.md)
+- [Creating Queue Functions](./queue.md)
 - [Creating Firestore triggered Functions](./firestore.md)
 - [Creating Cloud Storage triggered Functions](./storage.md)
 - [Creating Secrets](./secrets.md)

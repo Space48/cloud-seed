@@ -24,11 +24,27 @@ export type HttpConfig = {
 export type EventConfig = {
   type: "event";
   topicName: string;
+  topicConfig?: {
+    messageRetentionDuration?: string;
+  };
 } & FunctionConfig;
 
 export type ScheduleConfig = {
   type: "schedule";
   schedule: string;
+} & FunctionConfig;
+
+export type QueueConfig = {
+  type: "queue";
+  queueConfig?: {
+    maxDispatchesPerSecond?: number;
+    maxConcurrentDispatches?: number;
+    maxAttempts?: number;
+    maxRetryDuration?: string;
+    minBackoff?: string;
+    maxBackoff?: string;
+    maxDoublings?: number;
+  };
 } & FunctionConfig;
 
 export type FirestoreConfig = {
@@ -50,6 +66,7 @@ export type GcpConfig = (
   | HttpConfig
   | EventConfig
   | ScheduleConfig
+  | QueueConfig
   | FirestoreConfig
   | StorageConfig
 ) & {

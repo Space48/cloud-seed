@@ -7,6 +7,7 @@ import {
   CloudfunctionsFunctionConfig,
   CloudfunctionsFunctionIamMember,
   CloudSchedulerJob,
+  CloudTasksQueue,
   ComputeAddress,
   ComputeNetwork,
   ComputeRouter,
@@ -25,6 +26,7 @@ import { StackOptions, GcpFunction } from "./types";
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
   private existingTopics: string[] = [];
+  private existingQueues: string[] = [];
   private existingStaticIpVpcSubnets: string[] = [];
   constructor(scope: Construct, id: string, options: StackOptions) {
     super(scope, id);
@@ -103,6 +105,7 @@ export default class GcpStack extends TerraformStack {
     if (func.type === "event" && !this.existingTopics.includes(func.topicName)) {
       new PubsubTopic(this, func.topicName, {
         name: func.topicName,
+        messageRetentionDuration: func.topicConfig?.messageRetentionDuration,
       });
       this.existingTopics.push(func.topicName);
     }
@@ -120,6 +123,26 @@ export default class GcpStack extends TerraformStack {
           data: "c2NoZWR1bGU=",
         },
       });
+    }
+
+    // Create Cloud Tasks queue if it doesn't exist already
+    if (func.type === "queue" && !this.existingQueues.includes(func.name)) {
+      new CloudTasksQueue(this, func.name + "-queue", {
+        name: func.name,
+        location: this.options.gcpOptions.region,
+        rateLimits: {
+          maxConcurrentDispatches: func.queueConfig?.maxConcurrentDispatches,
+          maxDispatchesPerSecond: func.queueConfig?.maxDispatchesPerSecond,
+        },
+        retryConfig: {
+          maxAttempts: func.queueConfig?.maxAttempts,
+          minBackoff: func.queueConfig?.minBackoff,
+          maxBackoff: func.queueConfig?.maxBackoff,
+          maxDoublings: func.queueConfig?.maxDoublings,
+          maxRetryDuration: func.queueConfig?.maxRetryDuration,
+        },
+      });
+      this.existingQueues.push(func.name);
     }
 
     // Configure static IP constraint
@@ -153,7 +176,7 @@ export default class GcpStack extends TerraformStack {
   private generateFunctionTriggerConfig(
     config: GcpFunction,
   ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
-    if (config.type === "http") {
+    if (config.type === "http" || config.type === "queue") {
       return {
         triggerHttp: true,
       };
