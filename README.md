@@ -75,16 +75,18 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
-import { GcpConfig } from "@space48/cloud-seed";
+import type { GcpConfig } from "@space48/cloud-seed";
 
 const fn: CloudEventFunction (data) => {
   console.log("This is a event triggered function", data);
 };
 
+export default fn;
+
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "event",
-  // By defining the topicName it will create to the topic for you.
+  // By defining the topicName it will create the topic for you.
   topicName: "hello-world",
 };
 ```
@@ -93,7 +95,7 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
-import { GcpConfig } from "@space48/cloud-seed";
+import type { GcpConfig } from "@space48/cloud-seed";
 
 const fn: CloudEventFunction = (data) => {
   console.log("This is a scheduled triggered function", data);
@@ -108,11 +110,30 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
+### Queues:
+
+```typescript
+import { HttpFunction } from "@google-cloud/functions-framework";
+import type { GcpConfig } from "@space48/cloud-seed";
+
+const fn: HttpFunction = (req, res) => {
+  console.log(req.body);
+  return res.sendStatus(200);
+};
+
+export default fn;
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  type: "queue",
+};
+```
+
 ### Firestore document triggers:
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
-import { GcpConfig } from "@space48/cloud-seed";
+import type { GcpConfig } from "@space48/cloud-seed";
 
 const fn: CloudEventFunction = (data) => {
   console.log("This is a firestore triggered function", data);
@@ -133,7 +154,7 @@ export const runtimeConfig: GcpConfig = {
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
-import { GcpConfig } from "@space48/cloud-seed";
+import type { GcpConfig } from "@space48/cloud-seed";
 
 const fn: CloudEventFunction = (data) => {
   console.log("This is a cloud storage triggered function", data);
@@ -228,7 +249,8 @@ You can set the cloud seed config by adding a `cloudseed.json` file in the proje
 This package can also be called via a JS API.
 
 ```typescript
-import { build, BaseConfig, GoogleProvider } from "@space48/cloud-seed";
+import { build, BaseConfig } from "@space48/cloud-seed";
+import GoogleProvider from "@cdktf/provider-google";
 import { GcsBackend, TerraformStack } from "cdktf";
 import { Construct } from "constructs";
 

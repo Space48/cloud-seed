@@ -7,6 +7,7 @@ import {
   CloudfunctionsFunctionConfig,
   CloudfunctionsFunctionIamMember,
   CloudSchedulerJob,
+  CloudTasksQueue,
   ComputeAddress,
   ComputeNetwork,
   ComputeRouter,
@@ -18,14 +19,15 @@ import {
   StorageBucket,
   StorageBucketObject,
   VpcAccessConnector,
-} from "../../.gen/providers/google";
-import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
+} from "@cdktf/provider-google";
+import { ArchiveProvider, DataArchiveFile } from "@cdktf/provider-archive";
 import { StackOptions, GcpFunction } from "./types";
 import { getPubSubTopicName } from "../../utils/gcp/pubsub";
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
   private existingTopics: string[] = [];
+  private existingQueues: string[] = [];
   private existingStaticIpVpcSubnets: string[] = [];
   constructor(scope: Construct, id: string, options: StackOptions) {
     super(scope, id);
@@ -78,7 +80,7 @@ export default class GcpStack extends TerraformStack {
 
     const cloudFunc = new CloudfunctionsFunction(this, func.name, {
       name: func.name,
-      runtime: func.runtime ?? "nodejs14",
+      runtime: func.runtime,
       timeout: func.timeout ?? 60,
       sourceArchiveBucket: bucket.name,
       sourceArchiveObject: object.name,
@@ -97,13 +99,14 @@ export default class GcpStack extends TerraformStack {
     });
 
     if (func.type === "http") {
-      this.configureHttpFunction(func);
+      this.configureHttpFunction(func, cloudFunc);
     }
 
     // Create pubsub topics if they don't exist already.
     if (func.type === "event" && !this.existingTopics.includes(func.topicName)) {
       new PubsubTopic(this, func.topicName, {
         name: func.topicName,
+        messageRetentionDuration: func.topicConfig?.messageRetentionDuration,
       });
       this.existingTopics.push(func.topicName);
     }
@@ -126,6 +129,26 @@ export default class GcpStack extends TerraformStack {
       this.configureWebhookFunction(func);
     }
 
+    // Create Cloud Tasks queue if it doesn't exist already
+    if (func.type === "queue" && !this.existingQueues.includes(func.name)) {
+      new CloudTasksQueue(this, func.name + "-queue", {
+        name: func.name,
+        location: this.options.gcpOptions.region,
+        rateLimits: {
+          maxConcurrentDispatches: func.queueConfig?.maxConcurrentDispatches,
+          maxDispatchesPerSecond: func.queueConfig?.maxDispatchesPerSecond,
+        },
+        retryConfig: {
+          maxAttempts: func.queueConfig?.maxAttempts,
+          minBackoff: func.queueConfig?.minBackoff,
+          maxBackoff: func.queueConfig?.maxBackoff,
+          maxDoublings: func.queueConfig?.maxDoublings,
+          maxRetryDuration: func.queueConfig?.maxRetryDuration,
+        },
+      });
+      this.existingQueues.push(func.name);
+    }
+
     // Configure static IP constraint
     if (func.staticIp) {
       const vpcAccessConnectorCidrRange = "10.1.1.0/28";
@@ -139,7 +162,7 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
-  private configureHttpFunction(config: GcpFunction) {
+  private configureHttpFunction(config: GcpFunction, func: CloudfunctionsFunction) {
     if (config.type !== "http") {
       return;
     }
@@ -147,7 +170,7 @@ export default class GcpStack extends TerraformStack {
     // Configure if the http function is publically invokable.
     if (config.public) {
       new CloudfunctionsFunctionIamMember(this, config.name + "-http-invoker", {
-        cloudFunction: config.name,
+        cloudFunction: func.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
       });
@@ -171,7 +194,7 @@ export default class GcpStack extends TerraformStack {
   private generateFunctionTriggerConfig(
     config: GcpFunction,
   ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
-    if (config.type === "http") {
+    if (config.type === "http" || config.type === "queue") {
       return {
         triggerHttp: true,
       };

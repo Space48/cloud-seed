@@ -1,6 +1,6 @@
 {
   "name": "@space48/cloud-seed",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Cloud infrastructure automation tool that uses Terraform CDK.",
   "main": "dist/index.js",
   "bin": {
@@ -31,14 +31,16 @@
     "@google-cloud/functions-framework": "^3.1.2",
     "@google-cloud/pubsub": "^3.1.0",
     "@space48/bigcommerce-api": "^0.3.1",
-    "arg": "^5.0.1",
-    "cdktf": "^0.10.1",
-    "cdktf-cli": "^0.10.1",
-    "constructs": "^10.0.105",
-    "esbuild": "^0.14.8",
-    "glob": "^7.2.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.5.4"
+    "@cdktf/provider-archive": "^2.0.46",
+    "@cdktf/provider-google": "^2.0.15",
+    "arg": "^5.0.2",
+    "cdktf": "^0.12.2",
+    "cdktf-cli": "^0.12.2",
+    "constructs": "^10.1.88",
+    "esbuild": "^0.15.5",
+    "glob": "^8.0.3",
+    "typescript": "^4.7.4"
   },
   "devDependencies": {
     "@types/glob": "^7.2.0",
@@ -51,11 +53,11 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.0.0",
     "husky": "^4.3.8",
-    "jest": "^27.4.5",
+    "jest": "^28.1.3",
     "lint-staged": "^12.1.3",
     "prettier": "^2.5.1",
     "prettier-eslint": "^13.0.0",
-    "ts-jest": "^27.1.2"
+    "ts-jest": "^28.0.8"
   },
   "husky": {
     "hooks": {

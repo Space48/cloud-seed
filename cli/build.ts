@@ -33,7 +33,7 @@ export const cmdBuild: cliCommand = argv => {
     return printAndExit(
       `
     Usage
-      $ cloud-seed build <directory> [--options]
+      $ cloud-seed build <project-directory> --env=[env] [--options]
     Options
       --env=[env]       Set an environment eg: production, staging, dev, uat
       --src-dir=[src]   Set the dir for the source files
@@ -47,6 +47,11 @@ export const cmdBuild: cliCommand = argv => {
     );
   }
 
+  const environment = args["--env"];
+  if (!environment) {
+    return printAndExit("> Environment is required. Please set the --env flag.");
+  }
+
   const rootDir = args._[0] || ".";
   if (!existsSync(resolve(rootDir))) {
     return printAndExit(`> No such directory exists as the project root: ${rootDir}`);
@@ -56,7 +61,7 @@ export const cmdBuild: cliCommand = argv => {
     return printAndExit(`> No such directory exists as the project source directory: ${srcDir}`);
   }
   const outDir = args["--out-dir"];
-  const environment = args["--env"];
+
   return build({
     rootDir,
     srcDir,

@@ -81,11 +81,10 @@ function generateFunctionName(file: string) {
     .replace(/(src|index|functions|function|\.ts)/g, "")
     .replace(/^\//, "")
     .replace(/\/$/, "")
-    .replace(/[\/]{2,}/g, "/")
-    .replace(/\//g, "-")
-    .replace(/[-_]{2,}/g, "-")
-    .replace(/^[-_]+/, "")
-    .replace(/[-_]+$/, "");
+    .replace(/[\/_]/g, "-")
+    .replace(/[-]{2,}/g, "-")
+    .replace(/^[-]+/, "")
+    .replace(/[-]+$/, "");
 }
 
 function detectRuntimeConfig(node: ts.Node) {

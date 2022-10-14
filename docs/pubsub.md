@@ -5,18 +5,19 @@ If you want your function to be subscribed to a pubsub topic, you can use the `e
 ## Code sample
 
 ```typescript
-import { EventFunction } from "@google-cloud/functions-framework/build/src/functions";
-import { GcpConfig } from "@space48/cloud-seed";
+import { CloudEventFunction } from "@google-cloud/functions-framework";
+import type { GcpConfig } from "@space48/cloud-seed";
 
-const fn: EventFunction (data) => {
+const fn: CloudEventFunction (data) => {
   console.log("This is a event triggered function", data);
 };
+
+export default fn;
 
 export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "event",
-  // By defining the topicName it will create to the topic for you.
+  // By defining the topicName it will create the topic for you.
   topicName: "hello-world",
 };
 ```
-

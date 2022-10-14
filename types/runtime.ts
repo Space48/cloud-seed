@@ -8,7 +8,7 @@ export enum CloudServices {
 export type FunctionConfig = {
   // timeout in seconds. default of 60, max of 540.
   timeout?: number;
-  runtime?: "nodejs12" | "nodejs14";
+  runtime: string;
   memory?: number;
   retryOnFailure?: boolean;
   staticIp?: boolean;
@@ -24,11 +24,27 @@ export type HttpConfig = {
 export type EventConfig = {
   type: "event";
   topicName: string;
+  topicConfig?: {
+    messageRetentionDuration?: string;
+  };
 } & FunctionConfig;
 
 export type ScheduleConfig = {
   type: "schedule";
   schedule: string;
+} & FunctionConfig;
+
+export type QueueConfig = {
+  type: "queue";
+  queueConfig?: {
+    maxDispatchesPerSecond?: number;
+    maxConcurrentDispatches?: number;
+    maxAttempts?: number;
+    maxRetryDuration?: string;
+    minBackoff?: string;
+    maxBackoff?: string;
+    maxDoublings?: number;
+  };
 } & FunctionConfig;
 
 export type FirestoreConfig = {
@@ -58,6 +74,7 @@ export type GcpConfig = (
   | HttpConfig
   | EventConfig
   | ScheduleConfig
+  | QueueConfig
   | FirestoreConfig
   | StorageConfig
   | WebhookConfig
