@@ -33,8 +33,9 @@ definitions:
           - echo "//npm.pkg.github.com/:_authToken=${GITHUB_NPM_TOKEN}" >> .npmrc
           # Install dependencies, lint, build
           - npm ci
-          - npm run lint:ci
           - npm run build
+          - npm run lint:ci
+          
         artifacts:
           - .build/**
           - node_modules/**
