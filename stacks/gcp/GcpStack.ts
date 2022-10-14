@@ -21,6 +21,7 @@ import {
 } from "../../.gen/providers/google";
 import { ArchiveProvider, DataArchiveFile } from "../../.gen/providers/archive";
 import { StackOptions, GcpFunction } from "./types";
+import { getPubSubTopicName } from "../../utils/gcp/pubsub";
 
 export default class GcpStack extends TerraformStack {
   private options: StackOptions;
@@ -106,7 +107,6 @@ export default class GcpStack extends TerraformStack {
       });
       this.existingTopics.push(func.topicName);
     }
-
     // Create cloud scheduler job + pubsub topic.
     if (func.type === "schedule") {
       const scheduledTopic = new PubsubTopic(this, func.name + "-schedule", {
@@ -120,6 +120,10 @@ export default class GcpStack extends TerraformStack {
           data: "c2NoZWR1bGU=",
         },
       });
+    }
+
+    if (func.type === "webhook") {
+      this.configureWebhookFunction(func);
     }
 
     // Configure static IP constraint
@@ -147,6 +151,20 @@ export default class GcpStack extends TerraformStack {
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
       });
+    }
+  }
+
+  private configureWebhookFunction(config: GcpFunction) {
+    if (config.type !== "webhook") {
+      return;
+    }
+    const topicName = getPubSubTopicName(config.webhook.scope, config.webhook.type);
+
+    if (!this.existingTopics.includes(topicName)) {
+      new PubsubTopic(this, topicName, {
+        name: topicName,
+      });
+      this.existingTopics.push(topicName);
     }
   }
 
@@ -178,6 +196,9 @@ export default class GcpStack extends TerraformStack {
         eventType = `google.storage.object.${config.storageEvent || "finalize"}`;
         resource =
           config.bucket.environmentSpecific?.[this.options.environment] || config.bucket.default;
+        break;
+      case "webhook":
+        resource = getPubSubTopicName(config.webhook.scope, config.webhook.type);
         break;
     }
 
