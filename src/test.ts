@@ -7,6 +7,7 @@ const test: CloudEventFunction = async event => {
 export default test;
 
 export const runtimeConfig: GcpConfig = {
+  runtime: "nodejs14",
   cloud: "gcp",
   type: "webhook",
   webhook: {
