@@ -25,6 +25,7 @@ const bigcommerceWebhookPublishEvent: HttpFunction = async (request, response) =
 export default bigcommerceWebhookPublishEvent;
 
 export const runtimeConfig: GcpConfig = {
+  runtime: "nodejs14",
   cloud: "gcp",
   type: "http",
   public: true,
