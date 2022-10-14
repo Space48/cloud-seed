@@ -90,8 +90,7 @@ definitions:
           - export GCP_SERVICE_ACCOUNT=$([ $ENVIRONMENT = production ] && echo $GCP_SERVICE_ACCOUNT_PRODUCTION || echo $GCP_SERVICE_ACCOUNT_STAGING)
           - ./bitbucket-pipelines/prepare_gcloud_credentials.sh
           - export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
-          - rm -rf .build && node dist/bin/test-script.js
-          - npx @space48/cloud-seed build --env $ENVIRONMENT
+          - node dist/bin/test-script.js
           - >-
             if [ -f .build/dist/infra/main.js ]; then
               node .build/dist/infra/main.js
