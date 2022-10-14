@@ -62,7 +62,11 @@ const bundle = (
       join(outDir, "webhooks", "bigcommerceWebhooks.json"),
       JSON.stringify(
         {
-          destination: getWebHookGCPFunctionUrl(cloudConfig.gcp, "bigcommerce"),
+          destinationUrl: getGCPFunctionUrl(
+            cloudConfig.gcp,
+            "bigcommerce",
+            "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//",
+          ),
           scopes: bigcommerceWebhookScopes,
         },
         null,
@@ -147,22 +151,26 @@ function mapNode(node: ts.Node): any {
   return "UNSUPPORTED";
 }
 
-function findWebhookPublisherFunction() {
+function findFunctionFilePath(identifier: string) {
   const files = sync(join("webhooks", "**/*.ts"));
   let sourceFile = "";
   files.some(file => {
     const fileContentsBuffer = readFileSync(file);
     const [fileFirstLine] = fileContentsBuffer.toString().split(/\r?\n/);
-    if (fileFirstLine === "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//") {
+    if (fileFirstLine === identifier) {
       return (sourceFile = file);
     }
   });
   return sourceFile;
 }
 
-function getWebHookGCPFunctionUrl(GcpConfig: BaseConfig["cloud"]["gcp"], type: "bigcommerce") {
+function getGCPFunctionUrl(
+  GcpConfig: BaseConfig["cloud"]["gcp"],
+  type: "bigcommerce",
+  functionIdentifier: string,
+) {
   if (type === "bigcommerce")
     return `https://${GcpConfig.region}-${
       GcpConfig.project
-    }.cloudfunctions.net/${generateFunctionName(findWebhookPublisherFunction())}`;
+    }.cloudfunctions.net/${generateFunctionName(findFunctionFilePath(functionIdentifier))}`;
 }
