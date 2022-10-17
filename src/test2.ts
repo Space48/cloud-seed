@@ -2,7 +2,7 @@ import { CloudEventFunction } from "@google-cloud/functions-framework";
 import { GcpConfig } from "../types/runtime";
 
 const test: CloudEventFunction = async event => {
-  console.log("success 2");
+  console.log("product deleted!");
 };
 export default test;
 
@@ -12,6 +12,6 @@ export const runtimeConfig: GcpConfig = {
   type: "webhook",
   webhook: {
     type: "bigcommerce",
-    scope: "store/category/deleted",
+    scope: "store/product/deleted",
   },
 };
