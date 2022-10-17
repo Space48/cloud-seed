@@ -3,3 +3,13 @@ dist
 .eslintcache
 .gen
 .build
+.env
+.npmrc
+
+bin/test-script.ts
+bitbucket-pipelines.yml
+cloudseed.json
+src
+.DS_Store
+
+

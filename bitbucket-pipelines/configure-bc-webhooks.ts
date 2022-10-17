@@ -1,15 +1,19 @@
 import { Management } from "@space48/bigcommerce-api";
 import { GetWebhookPayload } from "../webhooks/types";
 import { readFileSync } from "fs";
+import { argv } from "process";
+import { join } from "path";
 
 const bigCommerce = new Management.Client({
   accessToken: process.env.BC_API_TOKEN!,
   storeHash: process.env.BC_STORE_HASH!,
 });
 
+const outDir = argv[2];
+
 async function main() {
   const { destinationUrl, scopes } = JSON.parse(
-    readFileSync(".build/webhooks/bigcommerceWebhooks.json").toString(),
+    readFileSync(join(outDir, "webhooks", "bigcommerce-webhooks.json")).toString(),
   );
 
   const allExistingWebhooks = (await bigCommerce.v3.get("/hooks")) as GetWebhookPayload[];

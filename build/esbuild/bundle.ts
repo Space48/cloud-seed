@@ -50,23 +50,21 @@ const bundle = (
     });
   });
 
-  const bigcommerceWebhookScopes = runtimeConfigs
-    .filter(config => config.type === "webhook" && config.webhook.type === "bigcommerce")
+  mkdirSync(join(outDir, "webhooks"));
+
+  const webhooks = runtimeConfigs.filter(config => config.type === "webhook");
+
+  const bigcommerceWebhookScopes = webhooks
+    .filter(config => config.webhook.type === "bigcommerce")
     .map(config => config.webhook.scope)
     .filter((scope, index, scopes) => scopes.indexOf(scope) === index);
 
-  mkdirSync(join(outDir, "webhooks"));
-
   if (bigcommerceWebhookScopes.length)
     writeFileSync(
-      join(outDir, "webhooks", "bigcommerceWebhooks.json"),
+      join(outDir, "webhooks", "bigcommerce-webhooks.json"),
       JSON.stringify(
         {
-          destinationUrl: getGCPFunctionUrl(
-            cloudConfig.gcp,
-            "bigcommerce",
-            "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//",
-          ),
+          destinationUrl: getGCPFunctionUrl(cloudConfig.gcp, "bigcommerce"),
           scopes: bigcommerceWebhookScopes,
         },
         null,
@@ -163,13 +161,11 @@ function findFunctionFilePath(identifier: string) {
   return sourceFile;
 }
 
-function getGCPFunctionUrl(
-  GcpConfig: BaseConfig["cloud"]["gcp"],
-  type: "bigcommerce",
-  functionIdentifier: string,
-) {
-  if (type === "bigcommerce")
+function getGCPFunctionUrl(GcpConfig: BaseConfig["cloud"]["gcp"], type: "bigcommerce") {
+  if (type === "bigcommerce") {
+    const functionIdentifier = "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//";
     return `https://${GcpConfig.region}-${
       GcpConfig.project
     }.cloudfunctions.net/${generateFunctionName(findFunctionFilePath(functionIdentifier))}`;
+  }
 }
