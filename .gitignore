@@ -6,10 +6,10 @@ dist
 .env
 .npmrc
 
-bin/test-script.ts
-bitbucket-pipelines.yml
-cloudseed.json
-src
+#bin/test-script.ts
+#bitbucket-pipelines.yml
+#cloudseed.json
+#src
 .DS_Store
 
 

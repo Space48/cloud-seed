@@ -1,0 +1,40 @@
+{
+  "$schema": "schemas/cloudseed.schema.json",
+  "default": {
+    "cloud": {
+      "gcp": {
+        "region": "europe-west2"
+      }
+    },
+    "buildConfig": {
+      "dir": "src",
+      "outDir": ".build"
+    },
+    "secretVariableNames": [
+      
+    ]
+  },
+  "environmentOverrides": {
+    "staging": {
+      "cloud": {
+        "gcp": {
+          "project": "s48-dev-sandbox"
+        }
+      },
+      "tfConfig": {
+        "backend": {
+          "type": "gcs",
+          "backendOptions": {
+            "bucket": "s48-terraform-state",
+            "prefix": "terraform/gcp-assets/internal/s48-dev-sandbox/main"
+          }
+        }
+      },
+      "runtimeEnvironmentVariables": {
+       
+      }
+    }
+    
+    
+  }
+}
