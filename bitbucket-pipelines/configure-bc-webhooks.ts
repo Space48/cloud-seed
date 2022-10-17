@@ -18,7 +18,7 @@ async function main() {
     webhook => webhook.destination === destinationUrl,
   );
 
-  const requiredScopes = scopes.split(",") as string[];
+  const requiredScopes = scopes as string[];
 
   const deletions = centralizedHooks
     .filter(webhook => !requiredScopes.includes(webhook.scope))
