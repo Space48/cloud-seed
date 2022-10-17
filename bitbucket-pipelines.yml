@@ -103,7 +103,7 @@ definitions:
               terraform -chdir=$dir plan -out=plan
               terraform -chdir=$dir apply plan
             done
-          - npx ts-node ./bitbucket-pipelines/configure-bc-webhooks.ts
+          - node dist/bitbucket-pipelines/configure-bc-webhooks.js
           - rm -rf $(pwd)/credentials.json
 
 pipelines:
