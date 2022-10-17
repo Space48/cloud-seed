@@ -40,6 +40,7 @@ definitions:
           - .build/**
           - node_modules/**
           - .npmrc
+          - dist/** #REMOVE
 
     - step: &test
         name: "Test"
@@ -63,7 +64,7 @@ definitions:
               ./bitbucket-pipelines/prepare_gcloud_credentials.sh
               export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
               rm -rf .build/stacks
-              node ./dist/bin/test-script.js
+              node dist/bin/test-script.js
               if [ -f .build/dist/infra/main.js ]; then
                 node .build/dist/infra/main.js
               fi
@@ -91,7 +92,7 @@ definitions:
           - export GCP_SERVICE_ACCOUNT=$([ $ENVIRONMENT = production ] && echo $GCP_SERVICE_ACCOUNT_PRODUCTION || echo $GCP_SERVICE_ACCOUNT_STAGING)
           - ./bitbucket-pipelines/prepare_gcloud_credentials.sh
           - export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
-          - node ./dist/bin/test-script.js
+          - node dist/bin/test-script.js
           - >-
             if [ -f .build/dist/infra/main.js ]; then
               node .build/dist/infra/main.js
