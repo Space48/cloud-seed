@@ -12,6 +12,6 @@ export const runtimeConfig: GcpConfig = {
   type: "webhook",
   webhook: {
     type: "bigcommerce",
-    scope: "store/product/created",
+    scope: "store/category/created",
   },
 };
