@@ -1,6 +1,8 @@
-import build from "../build";
+import build from "../dist/build/index.js";
 
-build({
+const _build = build.default;
+
+_build({
   rootDir: ".",
   environment: "staging",
 });
