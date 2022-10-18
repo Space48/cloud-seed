@@ -4,7 +4,6 @@ If you want your function to be triggered by a webhook, you can use the `webhook
 - webhook type (eg bigcommerce)
 - webhook scope
 
-
 ## Code Sample:
 
 ```typescript
