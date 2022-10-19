@@ -26,7 +26,7 @@ export default (buildOpts: Partial<BuildOpts>): { config: BaseConfig; app: App }
   mkdirSync(buildOutDir, { recursive: true });
 
   // Run bundler.
-  bundle(buildDir, buildOutDir, options.buildConfig.esbuildOptions);
+  bundle(buildDir, buildOutDir, options.cloud, options.buildConfig.esbuildOptions);
 
   // Generate stacks.
   const app = new App({ outdir: options.buildConfig.outDir });

@@ -1,11 +1,17 @@
 import ts from "typescript";
 import { sync } from "glob";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { BuildOptions, buildSync } from "esbuild";
 import { join, relative } from "path";
+import { BaseConfig } from "../../utils/rootConfig";
 
-const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptions>) => {
-  const files = sync(join(dir, "**/*.ts"));
+const bundle = (
+  dir: string,
+  outDir: string,
+  cloudConfig: BaseConfig["cloud"],
+  esbuildOptions?: Partial<BuildOptions>,
+) => {
+  const files = [...sync(join(dir, "**/*.ts")), ...sync(join("webhooks", "**/*.ts"))];
 
   let runtimeConfig: any = null;
   const runtimeConfigs: any[] = [];
@@ -30,6 +36,7 @@ const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptio
   });
 
   writeFileSync(join(outDir, "functions.json"), JSON.stringify(runtimeConfigs, null, 2));
+
   runtimeConfigs.forEach(config => {
     buildSync({
       entryPoints: [config.file],
@@ -42,6 +49,28 @@ const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptio
       ...esbuildOptions,
     });
   });
+
+  mkdirSync(join(outDir, "webhooks"));
+
+  const webhooks = runtimeConfigs.filter(config => config.type === "webhook");
+
+  const bigcommerceWebhookScopes = webhooks
+    .filter(config => config.webhook.type === "bigcommerce")
+    .map(config => config.webhook.scope)
+    .filter((scope, index, scopes) => scopes.indexOf(scope) === index);
+
+  if (bigcommerceWebhookScopes.length)
+    writeFileSync(
+      join(outDir, "webhooks", "bigcommerce-webhooks.json"),
+      JSON.stringify(
+        {
+          destinationUrl: getGCPFunctionUrl(cloudConfig.gcp, "bigcommerce"),
+          scopes: bigcommerceWebhookScopes,
+        },
+        null,
+        2,
+      ),
+    );
 };
 export default bundle;
 
@@ -117,4 +146,26 @@ function mapNode(node: ts.Node): any {
   }
 
   return "UNSUPPORTED";
+}
+
+function findFunctionFilePath(identifier: string) {
+  const files = sync(join("webhooks", "**/*.ts"));
+  let sourceFile = "";
+  files.some(file => {
+    const fileContentsBuffer = readFileSync(file);
+    const [fileFirstLine] = fileContentsBuffer.toString().split(/\r?\n/);
+    if (fileFirstLine === identifier) {
+      return (sourceFile = file);
+    }
+  });
+  return sourceFile;
+}
+
+function getGCPFunctionUrl(GcpConfig: BaseConfig["cloud"]["gcp"], type: "bigcommerce") {
+  if (type === "bigcommerce") {
+    const functionIdentifier = "//BIGCOMMERCE_WEBHOOK_PUBLISHER_FUNCTION//";
+    return `https://${GcpConfig.region}-${
+      GcpConfig.project
+    }.cloudfunctions.net/${generateFunctionName(findFunctionFilePath(functionIdentifier))}`;
+  }
 }
