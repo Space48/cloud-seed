@@ -1,4 +1,4 @@
-import { GcsBackendProps, LocalBackendProps, S3BackendProps } from "cdktf";
+import { GcsBackendConfig, LocalBackendConfig, S3BackendConfig } from "cdktf";
 import { BuildOptions } from "esbuild";
 import { existsSync, readFileSync } from "fs";
 import { join, resolve } from "path";
@@ -29,15 +29,15 @@ export interface BaseConfig {
     backend?:
       | {
           type: "gcs";
-          backendOptions: GcsBackendProps;
+          backendOptions: GcsBackendConfig;
         }
       | {
           type: "local";
-          backendOptions: LocalBackendProps;
+          backendOptions: LocalBackendConfig;
         }
       | {
           type: "s3";
-          backendOptions: S3BackendProps;
+          backendOptions: S3BackendConfig;
         };
   };
   buildConfig: {
