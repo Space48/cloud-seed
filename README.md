@@ -313,7 +313,7 @@ If a version is not given, the function will be automatically added as a gen 1.
 
 ### prerequisites
 
-- __ `python` and `make` should be installed in the build server__
+- __`python` and `make` should be installed in the build server__
 
 1. add to the bitbucket pipeline build step
 
