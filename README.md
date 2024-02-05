@@ -288,9 +288,9 @@ app.synth();
 # Cloud functions gen 2
 It is recommended by google to use the [gen 2](https://cloud.google.com/functions/docs/concepts/version-comparison) functions wherever possible.
 
-The latest `1.3.6-alpha` is an upgraded version to use gen 2 functions, which is still in alpha stage. This is currently being used in [Sneakers-n-stuff](https://bitbucket.org/space48/sneakersnstuff-backend).
+The cloud-seed `v1.3.6-alpha` is an upgraded version to use gen 2 functions, which is still in alpha stage. This is currently being used in [Sneakers-n-stuff](https://bitbucket.org/space48/sneakersnstuff-backend).
 
-If you upgrade a project, that is using an older version of cloud-seed (ex:`v1.3.0` is the latest stable version) to the `1.3.6-alpha` version, the existing cloud functions (which use older `csktf` npm modules) will be deleted and recreated. This can lead to an issue as functions/topics/secrets can't be created with the same name for 7 days, when they get deleted. Therefore upgrading a project that uses cloud-seed, has to be done cautiously.
+If you upgrade a project, that is using an older version of cloud-seed (ex:`v1.3.0` is the latest stable version) to the `1.3.6-alpha` version, all the existing cloud functions (which use older `csktf` npm modules) will be deleted and recreated. This can lead to an issue as functions/topics/secrets can't be created with the same name for 7 days, when they get deleted. Therefore upgrading a project that uses cloud-seed, has to be done cautiously.
 
 But for a new project it is recommended to use the `1.3.6-alpha` version with gen 2 functions support.
 
@@ -313,9 +313,9 @@ If a version is not given, the function will be automatically added as a gen 1.
 
 ### prerequisites
 
-- __1. `python` and `make` should be installed in the build server__
+- __ `python` and `make` should be installed in the build server__
 
-- __2. add to the bitbucket pipeline build step__
+1. add to the bitbucket pipeline build step
 
 ```yaml
  - step: &build
@@ -328,7 +328,7 @@ If a version is not given, the function will be automatically added as a gen 1.
           - ./bitbucket-pipelines/install_python_and_make.sh
 ```
 
-- __3. Add a new bash script: `install_python_and_make.sh`__
+2. Add a new bash script: `install_python_and_make.sh`
 
 ```bash
 #!/bin/bash
