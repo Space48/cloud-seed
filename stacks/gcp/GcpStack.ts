@@ -239,46 +239,99 @@ export default class GcpStack extends TerraformStack {
   private generateFunction2TriggerConfig(
     config: GcpFunction,
   ): Pick<cloudfunctions2Function.Cloudfunctions2FunctionConfig, "eventTrigger"> {
-    if (config.type === "http" || config.type === "queue") {
-      return {
-        // triggerHttp: true,
-      };
-    }
+    const retryPolicy =
+      config.retryOnFailure === undefined
+        ? "RETRY_POLICY_UNSPECIFIED"
+        : config.retryOnFailure
+        ? "RETRY_POLICY_RETRY"
+        : "RETRY_POLICY_DO_NOT_RETRY";
 
-    let eventType = "providers/cloud.pubsub/eventTypes/topic.publish";
-    let resource: string;
     switch (config.type) {
-      case "event":
-        resource = config.topicName;
-        break;
-      case "schedule":
-        resource = "scheduled-" + config.name;
-        break;
-      case "firestore":
-        eventType = `providers/cloud.firestore/eventTypes/document.${
-          config.firestoreEvent || "write"
-        }`;
-        resource = config.document;
-        break;
+      case "http":
+      case "queue":
+        return {};
       case "storage":
-        eventType = `google.storage.object.${config.storageEvent || "finalize"}`;
-        resource =
-          config.bucket.environmentSpecific?.[this.options.environment] || config.bucket.default;
-        break;
-    }
+        return {
+          eventTrigger: {
+            eventType: `google.cloud.storage.object.v1.${this.updateCloudStorageTriggerKeyWordsTo2ndGen(
+              config.storageEvent,
+            )}`,
+            retryPolicy,
+            eventFilters: [
+              {
+                attribute: "bucket",
+                value:
+                  config.bucket.environmentSpecific?.[this.options.environment] ||
+                  config.bucket.default,
+              },
+            ],
+          },
+        };
 
-    return {
-      eventTrigger: {
-        eventType,
-        pubsubTopic: resource,
-        retryPolicy:
-          config.retryOnFailure === undefined
-            ? "RETRY_POLICY_UNSPECIFIED"
-            : config.retryOnFailure
-            ? "RETRY_POLICY_RETRY"
-            : "RETRY_POLICY_DO_NOT_RETRY",
-      },
-    };
+      case "firestore":
+        return {
+          eventTrigger: {
+            eventType: `google.cloud.firestore.document.v1.${this.updateFirestoreTriggerKeyWordsTo2ndGen(
+              config.firestoreEvent,
+            )}`,
+            retryPolicy,
+            eventFilters: [
+              {
+                attribute: "database",
+                value: config.document,
+              },
+            ],
+          },
+        };
+
+      case "event":
+        return {
+          eventTrigger: {
+            eventType: "google.cloud.pubsub.topic.v1.messagePublished",
+            retryPolicy,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/scheduled-${config.topicName}`,
+          },
+        };
+
+      case "schedule":
+        return {
+          eventTrigger: {
+            eventType: "google.cloud.pubsub.topic.v1.messagePublished",
+            retryPolicy,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/scheduled-${config.name}`,
+          },
+        };
+    }
+  }
+
+  private updateFirestoreTriggerKeyWordsTo2ndGen(actionKey?: string) {
+    switch (actionKey) {
+      case "create":
+        return "created";
+      case "update":
+        return "updated";
+      case "delete":
+        return "deleted";
+      case "write":
+        return "written";
+      default:
+        return "written";
+    }
+  }
+
+  private updateCloudStorageTriggerKeyWordsTo2ndGen(actionKey?: string) {
+    switch (actionKey) {
+      case "finalize":
+        return "finalized";
+      case "archive":
+        return "archived";
+      case "delete":
+        return "deleted";
+      case "metadataUpdate":
+        return "metadataUpdated";
+      default:
+        return "finalized";
+    }
   }
 
   private generateFunctionTriggerConfig(
