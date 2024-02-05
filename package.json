@@ -1,6 +1,6 @@
 {
   "name": "@space48/cloud-seed",
-  "version": "1.3.3-alpha",
+  "version": "1.3.5-beta",
   "description": "Cloud infrastructure automation tool that uses Terraform CDK.",
   "main": "dist/index.js",
   "bin": {

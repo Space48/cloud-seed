@@ -79,28 +79,38 @@ export default class GcpStack extends TerraformStack {
     const envVars = this.options.envVars ?? {};
 
     let cloudFunc;
+    let scheduledTopic;
+    // Create cloud scheduler pubsub topic.
+    if (func.type === "schedule") {
+      scheduledTopic = new pubsubTopic.PubsubTopic(this, func.name + "-schedule", {
+        name: "scheduled-" + func.name,
+      });
+    }
 
     if (func.version === "gen2") {
+      const env = {
+        NODE_ENV: this.options.environment,
+        GCP_PROJECT: this.options.gcpOptions.project,
+        GCP_REGION: this.options.gcpOptions.region,
+        ...envVars,
+      };
       cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
         name: func.name,
         buildConfig: {
           runtime: func.runtime,
           source: { storageSource: { bucket: bucket.name, object: object.name } },
-          environmentVariables: {
-            NODE_ENV: this.options.environment,
-            GCP_PROJECT: this.options.gcpOptions.project,
-            GCP_REGION: this.options.gcpOptions.region,
-            ...envVars,
-          },
+          environmentVariables: env,
+          entryPoint: "default",
         },
         serviceConfig: {
           availableMemory: func.memory?.toString().concat("M") ?? "256M",
           timeoutSeconds: func.timeout ?? 60,
           maxInstanceCount: func.maxInstances,
           minInstanceCount: func.minInstances,
+          environmentVariables: env,
         },
         location: this.options.gcpOptions.region,
-        ...this.generateFunction2TriggerConfig(func),
+        ...this.generateFunction2TriggerConfig(func, scheduledTopic),
       });
       if (func.type === "http") {
         this.configureHttpFunction2(func, cloudFunc);
@@ -139,11 +149,8 @@ export default class GcpStack extends TerraformStack {
       this.existingTopics.push(func.topicName);
     }
 
-    // Create cloud scheduler job + pubsub topic.
-    if (func.type === "schedule") {
-      const scheduledTopic = new pubsubTopic.PubsubTopic(this, func.name + "-schedule", {
-        name: "scheduled-" + func.name,
-      });
+    // Create cloud scheduler job.
+    if (func.type === "schedule" && scheduledTopic) {
       new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
@@ -238,6 +245,7 @@ export default class GcpStack extends TerraformStack {
 
   private generateFunction2TriggerConfig(
     config: GcpFunction,
+    scheduledTopic?: pubsubTopic.PubsubTopic,
   ): Pick<cloudfunctions2Function.Cloudfunctions2FunctionConfig, "eventTrigger"> {
     const retryPolicy =
       config.retryOnFailure === undefined
@@ -298,7 +306,7 @@ export default class GcpStack extends TerraformStack {
           eventTrigger: {
             eventType: "google.cloud.pubsub.topic.v1.messagePublished",
             retryPolicy,
-            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/scheduled-${config.name}`,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic?.name}`,
           },
         };
     }
