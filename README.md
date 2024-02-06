@@ -335,6 +335,7 @@ If a version is not given, the function will be automatically added as a gen 1.
 apt update && apt -y install python3 && apt -y install build-essential
 ```
 
+- __Enable Eventarc API in GCP as gen2 cloud functions are built on Cloud Run and Eventarc__
 
 # Licence and acknowledgements
 
