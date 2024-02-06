@@ -1,10 +1,10 @@
 {
   "language": "typescript",
   "app": "node dist/bin/entrypoint.js build --env $ENVIRONMENT",
-  "terraformProviders": [
-  ],
+  "terraformProviders": [],
   "context": {
     "excludeStackIdFromLogicalIds": "true",
     "allowSepCharsInLogicalIds": "true"
-  }
+  },
+  "projectId": "1c8b0afd-ee06-41da-a195-184ec0418c30"
 }

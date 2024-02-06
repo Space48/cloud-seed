@@ -12,4 +12,5 @@ export type StackOptions = {
 export type GcpFunction = GcpConfig & {
   file: string;
   name: string;
+  version?: string;
 };

@@ -14,6 +14,7 @@ export type FunctionConfig = {
   staticIp?: boolean;
   maxInstances?: number;
   minInstances?: number;
+  version?: string;
 };
 
 export type HttpConfig = {
