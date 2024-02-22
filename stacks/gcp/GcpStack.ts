@@ -161,6 +161,17 @@ export default class GcpStack extends TerraformStack {
       });
     }
 
+    if (func.type === "scheduledJob" && func.version === "gen2") {
+      new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
+        name: func.name,
+        schedule: func.schedule,
+        httpTarget: {
+          uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
+          httpMethod: "POST",
+        },
+      });
+    }
+
     // Create Cloud Tasks queue if it doesn't exist already
     if (func.type === "queue" && !this.existingQueues.includes(func.name)) {
       new cloudTasksQueue.CloudTasksQueue(this, func.name + "-queue", {
@@ -257,6 +268,7 @@ export default class GcpStack extends TerraformStack {
     switch (config.type) {
       case "http":
       case "queue":
+      case "scheduledJob":
         return {};
       case "storage":
         return {
@@ -352,7 +364,7 @@ export default class GcpStack extends TerraformStack {
     }
 
     let eventType = "providers/cloud.pubsub/eventTypes/topic.publish";
-    let resource: string;
+    let resource = "";
     switch (config.type) {
       case "event":
         resource = config.topicName;
