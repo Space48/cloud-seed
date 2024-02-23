@@ -169,6 +169,7 @@ export default class GcpStack extends TerraformStack {
       new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
+        attemptDeadline: func.attemptDeadline || "3m",
         httpTarget: {
           uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
           httpMethod: "POST",
