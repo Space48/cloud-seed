@@ -91,7 +91,7 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
-### Scheduled functions:
+### Scheduled functions using pub/sub topic:
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
@@ -107,6 +107,28 @@ export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "schedule",
   schedule: "* * * * *",
+};
+```
+
+### Scheduled functions without using pub/sub topic:
+Supported only in gen 2 supported versions of cloud-seed
+
+```typescript
+import { CloudEventFunction } from "@google-cloud/functions-framework";
+import type { GcpConfig } from "@space48/cloud-seed";
+
+const fn: CloudEventFunction = (data) => {
+  console.log("This is a scheduled triggered function, triggered directly from the scheduled job", data);
+};
+
+export default fn;
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  schedule: "* * * * *",
+  type: "scheduledJob",
+  version: "gen2",
+  attemptDeadline: "1800s", // optional, this is set as 3 minutes by default
 };
 ```
 

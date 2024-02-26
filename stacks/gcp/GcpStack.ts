@@ -20,6 +20,7 @@ import {
   storageBucket,
   storageBucketObject,
   vpcAccessConnector,
+  cloudRunServiceIamMember,
 } from "@cdktf/provider-google";
 import { provider as archiveProvider, dataArchiveFile } from "@cdktf/provider-archive";
 import { StackOptions, GcpFunction } from "./types";
@@ -115,6 +116,9 @@ export default class GcpStack extends TerraformStack {
       if (func.type === "http") {
         this.configureHttpFunction2(func, cloudFunc);
       }
+      if (func.type === "scheduledJob") {
+        this.configureScheduledHttpFunction2(func, cloudFunc);
+      }
     } else {
       cloudFunc = new cloudfunctionsFunction.CloudfunctionsFunction(this, func.name, {
         name: func.name,
@@ -157,6 +161,18 @@ export default class GcpStack extends TerraformStack {
         pubsubTarget: {
           topicName: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic.name}`,
           data: "c2NoZWR1bGU=",
+        },
+      });
+    }
+
+    if (func.type === "scheduledJob" && func.version === "gen2") {
+      new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
+        name: func.name,
+        schedule: func.schedule,
+        attemptDeadline: func.attemptDeadline || "3m",
+        httpTarget: {
+          uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
+          httpMethod: "POST",
         },
       });
     }
@@ -221,6 +237,32 @@ export default class GcpStack extends TerraformStack {
     }
   }
 
+  private configureScheduledHttpFunction2(
+    config: GcpFunction,
+    func: cloudfunctions2Function.Cloudfunctions2Function,
+  ) {
+    if (config.type !== "scheduledJob") {
+      return;
+    }
+
+    // Configure invoke permissions for the http function.
+    new cloudfunctions2FunctionIamMember.Cloudfunctions2FunctionIamMember(
+      this,
+      config.name + "-http-invoker",
+      {
+        cloudFunction: func.name,
+        role: "roles/cloudfunctions.invoker",
+        member: "allUsers",
+      },
+    );
+
+    new cloudRunServiceIamMember.CloudRunServiceIamMember(this, config.name + "-http-run-invoker", {
+      service: func.serviceConfig.service,
+      role: "roles/run.invoker",
+      member: "allUsers",
+    });
+  }
+
   private configureHttpFunction(
     config: GcpFunction,
     func: cloudfunctionsFunction.CloudfunctionsFunction,
@@ -255,8 +297,9 @@ export default class GcpStack extends TerraformStack {
         : "RETRY_POLICY_DO_NOT_RETRY";
 
     switch (config.type) {
-      case "http":
       case "queue":
+      case "http":
+      case "scheduledJob":
         return {};
       case "storage":
         return {
@@ -352,7 +395,7 @@ export default class GcpStack extends TerraformStack {
     }
 
     let eventType = "providers/cloud.pubsub/eventTypes/topic.publish";
-    let resource: string;
+    let resource = "";
     switch (config.type) {
       case "event":
         resource = config.topicName;
