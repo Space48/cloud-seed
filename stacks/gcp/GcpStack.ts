@@ -293,8 +293,8 @@ export default class GcpStack extends TerraformStack {
       config.retryOnFailure === undefined
         ? "RETRY_POLICY_UNSPECIFIED"
         : config.retryOnFailure
-        ? "RETRY_POLICY_RETRY"
-        : "RETRY_POLICY_DO_NOT_RETRY";
+          ? "RETRY_POLICY_RETRY"
+          : "RETRY_POLICY_DO_NOT_RETRY";
 
     switch (config.type) {
       case "queue":
@@ -340,7 +340,7 @@ export default class GcpStack extends TerraformStack {
           eventTrigger: {
             eventType: "google.cloud.pubsub.topic.v1.messagePublished",
             retryPolicy,
-            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/scheduled-${config.topicName}`,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/${config.topicName}`,
           },
         };
 
