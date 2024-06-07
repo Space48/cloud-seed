@@ -88,7 +88,30 @@ export default class GcpStack extends TerraformStack {
       });
     }
 
-    if (func.version === "gen2") {
+    if (func.version === "gen1") {
+      cloudFunc = new cloudfunctionsFunction.CloudfunctionsFunction(this, func.name, {
+        name: func.name,
+        runtime: func.runtime,
+        timeout: func.timeout ?? 60,
+        sourceArchiveBucket: bucket.name,
+        sourceArchiveObject: object.name,
+        availableMemoryMb: func.memory ?? 256,
+        entryPoint: "default",
+        maxInstances: func.maxInstances,
+        minInstances: func.minInstances,
+        environmentVariables: {
+          NODE_ENV: this.options.environment,
+          GCP_PROJECT: this.options.gcpOptions.project,
+          GCP_REGION: this.options.gcpOptions.region,
+          ...envVars,
+        },
+
+        ...this.generateFunctionTriggerConfig(func),
+      });
+      if (func.type === "http") {
+        this.configureHttpFunction(func, cloudFunc);
+      }
+    } else {
       const env = {
         NODE_ENV: this.options.environment,
         GCP_PROJECT: this.options.gcpOptions.project,
@@ -118,29 +141,6 @@ export default class GcpStack extends TerraformStack {
       }
       if (func.type === "scheduledJob") {
         this.configureScheduledHttpFunction2(func, cloudFunc);
-      }
-    } else {
-      cloudFunc = new cloudfunctionsFunction.CloudfunctionsFunction(this, func.name, {
-        name: func.name,
-        runtime: func.runtime,
-        timeout: func.timeout ?? 60,
-        sourceArchiveBucket: bucket.name,
-        sourceArchiveObject: object.name,
-        availableMemoryMb: func.memory ?? 256,
-        entryPoint: "default",
-        maxInstances: func.maxInstances,
-        minInstances: func.minInstances,
-        environmentVariables: {
-          NODE_ENV: this.options.environment,
-          GCP_PROJECT: this.options.gcpOptions.project,
-          GCP_REGION: this.options.gcpOptions.region,
-          ...envVars,
-        },
-
-        ...this.generateFunctionTriggerConfig(func),
-      });
-      if (func.type === "http") {
-        this.configureHttpFunction(func, cloudFunc);
       }
     }
 
@@ -293,8 +293,8 @@ export default class GcpStack extends TerraformStack {
       config.retryOnFailure === undefined
         ? "RETRY_POLICY_UNSPECIFIED"
         : config.retryOnFailure
-          ? "RETRY_POLICY_RETRY"
-          : "RETRY_POLICY_DO_NOT_RETRY";
+        ? "RETRY_POLICY_RETRY"
+        : "RETRY_POLICY_DO_NOT_RETRY";
 
     switch (config.type) {
       case "queue":
