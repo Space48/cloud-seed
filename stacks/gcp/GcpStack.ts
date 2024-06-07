@@ -165,7 +165,7 @@ export default class GcpStack extends TerraformStack {
       });
     }
 
-    if (func.type === "scheduledJob" && func.version === "gen2") {
+    if (func.type === "scheduledJob" && func.version !== "gen1") {
       new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
