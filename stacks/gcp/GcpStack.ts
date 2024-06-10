@@ -3,24 +3,26 @@ import { join } from "path";
 import { Construct } from "constructs";
 import { TerraformStack } from "cdktf";
 import {
-  CloudfunctionsFunction,
-  CloudfunctionsFunctionConfig,
-  CloudfunctionsFunctionIamMember,
-  CloudSchedulerJob,
-  CloudTasksQueue,
-  ComputeAddress,
-  ComputeNetwork,
-  ComputeRouter,
-  ComputeRouterNat,
-  GoogleProvider,
-  PubsubTopic,
-  SecretManagerSecret,
-  SecretManagerSecretVersion,
-  StorageBucket,
-  StorageBucketObject,
-  VpcAccessConnector,
+  cloudfunctionsFunction,
+  cloudfunctions2Function,
+  cloudfunctionsFunctionIamMember,
+  cloudfunctions2FunctionIamMember,
+  cloudSchedulerJob,
+  cloudTasksQueue,
+  computeAddress,
+  computeNetwork,
+  computeRouter,
+  computeRouterNat,
+  provider as googleProvider,
+  pubsubTopic,
+  secretManagerSecret,
+  secretManagerSecretVersion,
+  storageBucket,
+  storageBucketObject,
+  vpcAccessConnector,
+  cloudRunServiceIamMember,
 } from "@cdktf/provider-google";
-import { ArchiveProvider, DataArchiveFile } from "@cdktf/provider-archive";
+import { provider as archiveProvider, dataArchiveFile } from "@cdktf/provider-archive";
 import { StackOptions, GcpFunction } from "./types";
 
 export default class GcpStack extends TerraformStack {
@@ -36,7 +38,7 @@ export default class GcpStack extends TerraformStack {
     };
 
     // Configure the Google Provider.
-    new GoogleProvider(this, "Google", {
+    new googleProvider.GoogleProvider(this, "Google", {
       project: this.options.gcpOptions.project,
       region: this.options.gcpOptions.region,
     });
@@ -45,9 +47,9 @@ export default class GcpStack extends TerraformStack {
 
     if (functions.length) {
       // Configure the Archive Provider if archives need to be generated
-      new ArchiveProvider(this, "Archive");
+      new archiveProvider.ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
-      const bucket = new StorageBucket(this, "FuncSourceBucket", {
+      const bucket = new storageBucket.StorageBucket(this, "FuncSourceBucket", {
         name:
           options.gcpOptions.sourceCodeStorage?.bucket?.name ||
           `${options.gcpOptions.project}-functions`,
@@ -59,17 +61,17 @@ export default class GcpStack extends TerraformStack {
     this.generateSecrets();
   }
 
-  private generateFunction(func: GcpFunction, bucket: StorageBucket) {
+  private generateFunction(func: GcpFunction, bucket: storageBucket.StorageBucket) {
     const functionDir = join(this.options.outDir, "functions", func.name);
     const artifactPath = join(this.options.outDir, "artifacts", `${func.name}.zip`);
 
-    const archive = new DataArchiveFile(this, func.name + "-zip", {
+    const archive = new dataArchiveFile.DataArchiveFile(this, func.name + "-zip", {
       type: "zip",
       outputPath: artifactPath,
       sourceDir: functionDir,
     });
 
-    const object = new StorageBucketObject(this, func.name + "-storage-zip", {
+    const object = new storageBucketObject.StorageBucketObject(this, func.name + "-storage-zip", {
       bucket: bucket.name,
       name: `${func.name}-${archive.outputMd5}.zip`,
       source: artifactPath,
@@ -77,45 +79,83 @@ export default class GcpStack extends TerraformStack {
 
     const envVars = this.options.envVars ?? {};
 
-    const cloudFunc = new CloudfunctionsFunction(this, func.name, {
-      name: func.name,
-      runtime: func.runtime,
-      timeout: func.timeout ?? 60,
-      sourceArchiveBucket: bucket.name,
-      sourceArchiveObject: object.name,
-      availableMemoryMb: func.memory ?? 256,
-      entryPoint: "default",
-      maxInstances: func.maxInstances,
-      minInstances: func.minInstances,
-      environmentVariables: {
+    let cloudFunc;
+    let scheduledTopic;
+    // Create cloud scheduler pubsub topic.
+    if (func.type === "schedule") {
+      scheduledTopic = new pubsubTopic.PubsubTopic(this, func.name + "-schedule", {
+        name: "scheduled-" + func.name,
+      });
+    }
+
+    if (func.version === "gen1") {
+      cloudFunc = new cloudfunctionsFunction.CloudfunctionsFunction(this, func.name, {
+        name: func.name,
+        runtime: func.runtime,
+        timeout: func.timeout ?? 60,
+        sourceArchiveBucket: bucket.name,
+        sourceArchiveObject: object.name,
+        availableMemoryMb: func.memory ?? 256,
+        entryPoint: "default",
+        maxInstances: func.maxInstances,
+        minInstances: func.minInstances,
+        environmentVariables: {
+          NODE_ENV: this.options.environment,
+          GCP_PROJECT: this.options.gcpOptions.project,
+          GCP_REGION: this.options.gcpOptions.region,
+          ...envVars,
+        },
+
+        ...this.generateFunctionTriggerConfig(func),
+      });
+      if (func.type === "http") {
+        this.configureHttpFunction(func, cloudFunc);
+      }
+    } else {
+      const env = {
         NODE_ENV: this.options.environment,
         GCP_PROJECT: this.options.gcpOptions.project,
         GCP_REGION: this.options.gcpOptions.region,
         ...envVars,
-      },
-
-      ...this.generateFunctionTriggerConfig(func),
-    });
-
-    if (func.type === "http") {
-      this.configureHttpFunction(func, cloudFunc);
+      };
+      cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
+        name: func.name,
+        buildConfig: {
+          runtime: func.runtime,
+          source: { storageSource: { bucket: bucket.name, object: object.name } },
+          environmentVariables: env,
+          entryPoint: "default",
+        },
+        serviceConfig: {
+          availableMemory: func.memory?.toString().concat("M") ?? "256M",
+          timeoutSeconds: func.timeout ?? 60,
+          maxInstanceCount: func.maxInstances,
+          minInstanceCount: func.minInstances,
+          environmentVariables: env,
+        },
+        location: this.options.gcpOptions.region,
+        ...this.generateFunction2TriggerConfig(func, scheduledTopic),
+      });
+      if (func.type === "http") {
+        this.configureHttpFunction2(func, cloudFunc);
+      }
+      if (func.type === "scheduledJob") {
+        this.configureScheduledHttpFunction2(func, cloudFunc);
+      }
     }
 
     // Create pubsub topics if they don't exist already.
     if (func.type === "event" && !this.existingTopics.includes(func.topicName)) {
-      new PubsubTopic(this, func.topicName, {
+      new pubsubTopic.PubsubTopic(this, func.topicName, {
         name: func.topicName,
         messageRetentionDuration: func.topicConfig?.messageRetentionDuration,
       });
       this.existingTopics.push(func.topicName);
     }
 
-    // Create cloud scheduler job + pubsub topic.
-    if (func.type === "schedule") {
-      const scheduledTopic = new PubsubTopic(this, func.name + "-schedule", {
-        name: "scheduled-" + func.name,
-      });
-      new CloudSchedulerJob(this, "scheduler-" + func.name, {
+    // Create cloud scheduler job.
+    if (func.type === "schedule" && scheduledTopic) {
+      new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
         pubsubTarget: {
@@ -125,9 +165,21 @@ export default class GcpStack extends TerraformStack {
       });
     }
 
+    if (func.type === "scheduledJob" && func.version !== "gen1") {
+      new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
+        name: func.name,
+        schedule: func.schedule,
+        attemptDeadline: func.attemptDeadline || "3m",
+        httpTarget: {
+          uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
+          httpMethod: "POST",
+        },
+      });
+    }
+
     // Create Cloud Tasks queue if it doesn't exist already
     if (func.type === "queue" && !this.existingQueues.includes(func.name)) {
-      new CloudTasksQueue(this, func.name + "-queue", {
+      new cloudTasksQueue.CloudTasksQueue(this, func.name + "-queue", {
         name: func.name,
         location: this.options.gcpOptions.region,
         rateLimits: {
@@ -150,32 +202,192 @@ export default class GcpStack extends TerraformStack {
       const vpcAccessConnectorCidrRange = "10.1.1.0/28";
       const vpcAccessConnectorName =
         "connector-" + vpcAccessConnectorCidrRange.replace(/\./g, "-").replace(/\/.*/, "");
-      cloudFunc.vpcConnector = vpcAccessConnectorName;
-      cloudFunc.vpcConnectorEgressSettings = "ALL_TRAFFIC";
+      if (cloudFunc instanceof cloudfunctionsFunction.CloudfunctionsFunction) {
+        cloudFunc.vpcConnector = vpcAccessConnectorName;
+        cloudFunc.vpcConnectorEgressSettings = "ALL_TRAFFIC";
+      } else {
+        cloudFunc.serviceConfig.vpcConnector = vpcAccessConnectorName;
+        cloudFunc.serviceConfig.vpcConnectorEgressSettings = "ALL_TRAFFIC";
+      }
       if (!this.existingStaticIpVpcSubnets.length) {
         this.configureStaticIpResources(vpcAccessConnectorName, vpcAccessConnectorCidrRange);
       }
     }
   }
 
-  private configureHttpFunction(config: GcpFunction, func: CloudfunctionsFunction) {
+  private configureHttpFunction2(
+    config: GcpFunction,
+    func: cloudfunctions2Function.Cloudfunctions2Function,
+  ) {
     if (config.type !== "http") {
       return;
     }
 
     // Configure if the http function is publically invokable.
     if (config.public) {
-      new CloudfunctionsFunctionIamMember(this, config.name + "-http-invoker", {
+      new cloudfunctions2FunctionIamMember.Cloudfunctions2FunctionIamMember(
+        this,
+        config.name + "-http-invoker",
+        {
+          cloudFunction: func.name,
+          role: "roles/cloudfunctions.invoker",
+          member: "allUsers",
+        },
+      );
+    }
+  }
+
+  private configureScheduledHttpFunction2(
+    config: GcpFunction,
+    func: cloudfunctions2Function.Cloudfunctions2Function,
+  ) {
+    if (config.type !== "scheduledJob") {
+      return;
+    }
+
+    // Configure invoke permissions for the http function.
+    new cloudfunctions2FunctionIamMember.Cloudfunctions2FunctionIamMember(
+      this,
+      config.name + "-http-invoker",
+      {
         cloudFunction: func.name,
         role: "roles/cloudfunctions.invoker",
         member: "allUsers",
-      });
+      },
+    );
+
+    new cloudRunServiceIamMember.CloudRunServiceIamMember(this, config.name + "-http-run-invoker", {
+      service: func.serviceConfig.service,
+      role: "roles/run.invoker",
+      member: "allUsers",
+    });
+  }
+
+  private configureHttpFunction(
+    config: GcpFunction,
+    func: cloudfunctionsFunction.CloudfunctionsFunction,
+  ) {
+    if (config.type !== "http") {
+      return;
+    }
+
+    // Configure if the http function is publically invokable.
+    if (config.public) {
+      new cloudfunctionsFunctionIamMember.CloudfunctionsFunctionIamMember(
+        this,
+        config.name + "-http-invoker",
+        {
+          cloudFunction: func.name,
+          role: "roles/cloudfunctions.invoker",
+          member: "allUsers",
+        },
+      );
+    }
+  }
+
+  private generateFunction2TriggerConfig(
+    config: GcpFunction,
+    scheduledTopic?: pubsubTopic.PubsubTopic,
+  ): Pick<cloudfunctions2Function.Cloudfunctions2FunctionConfig, "eventTrigger"> {
+    const retryPolicy =
+      config.retryOnFailure === undefined
+        ? "RETRY_POLICY_UNSPECIFIED"
+        : config.retryOnFailure
+        ? "RETRY_POLICY_RETRY"
+        : "RETRY_POLICY_DO_NOT_RETRY";
+
+    switch (config.type) {
+      case "queue":
+      case "http":
+      case "scheduledJob":
+        return {};
+      case "storage":
+        return {
+          eventTrigger: {
+            eventType: `google.cloud.storage.object.v1.${this.updateCloudStorageTriggerKeyWordsTo2ndGen(
+              config.storageEvent,
+            )}`,
+            retryPolicy,
+            eventFilters: [
+              {
+                attribute: "bucket",
+                value:
+                  config.bucket.environmentSpecific?.[this.options.environment] ||
+                  config.bucket.default,
+              },
+            ],
+          },
+        };
+
+      case "firestore":
+        return {
+          eventTrigger: {
+            eventType: `google.cloud.firestore.document.v1.${this.updateFirestoreTriggerKeyWordsTo2ndGen(
+              config.firestoreEvent,
+            )}`,
+            retryPolicy,
+            eventFilters: [
+              {
+                attribute: "database",
+                value: config.document,
+              },
+            ],
+          },
+        };
+
+      case "event":
+        return {
+          eventTrigger: {
+            eventType: "google.cloud.pubsub.topic.v1.messagePublished",
+            retryPolicy,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/${config.topicName}`,
+          },
+        };
+
+      case "schedule":
+        return {
+          eventTrigger: {
+            eventType: "google.cloud.pubsub.topic.v1.messagePublished",
+            retryPolicy,
+            pubsubTopic: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic?.name}`,
+          },
+        };
+    }
+  }
+
+  private updateFirestoreTriggerKeyWordsTo2ndGen(actionKey?: string) {
+    switch (actionKey) {
+      case "create":
+        return "created";
+      case "update":
+        return "updated";
+      case "delete":
+        return "deleted";
+      case "write":
+        return "written";
+      default:
+        return "written";
+    }
+  }
+
+  private updateCloudStorageTriggerKeyWordsTo2ndGen(actionKey?: string) {
+    switch (actionKey) {
+      case "finalize":
+        return "finalized";
+      case "archive":
+        return "archived";
+      case "delete":
+        return "deleted";
+      case "metadataUpdate":
+        return "metadataUpdated";
+      default:
+        return "finalized";
     }
   }
 
   private generateFunctionTriggerConfig(
     config: GcpFunction,
-  ): Pick<CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
+  ): Pick<cloudfunctionsFunction.CloudfunctionsFunctionConfig, "triggerHttp" | "eventTrigger"> {
     if (config.type === "http" || config.type === "queue") {
       return {
         triggerHttp: true,
@@ -183,7 +395,7 @@ export default class GcpStack extends TerraformStack {
     }
 
     let eventType = "providers/cloud.pubsub/eventTypes/topic.publish";
-    let resource: string;
+    let resource = "";
     switch (config.type) {
       case "event":
         resource = config.topicName;
@@ -220,21 +432,21 @@ export default class GcpStack extends TerraformStack {
     const region = this.options.gcpOptions.region;
     const netName = "static-ip-vpc";
     if (!this.existingStaticIpVpcSubnets.length) {
-      const network = new ComputeNetwork(this, netName, {
+      const network = new computeNetwork.ComputeNetwork(this, netName, {
         name: netName,
         autoCreateSubnetworks: false,
       });
-      const staticIp = new ComputeAddress(this, "static-ip", {
+      const staticIp = new computeAddress.ComputeAddress(this, "static-ip", {
         name: "static-ip",
         addressType: "EXTERNAL",
         region,
       });
-      const router = new ComputeRouter(this, "static-ip-router", {
+      const router = new computeRouter.ComputeRouter(this, "static-ip-router", {
         name: "static-ip-router",
         network: network.id,
         region,
       });
-      new ComputeRouterNat(this, "static-ip-nat", {
+      new computeRouterNat.ComputeRouterNat(this, "static-ip-nat", {
         name: "static-ip-nat",
         router: router.name,
         region: router.region,
@@ -244,7 +456,7 @@ export default class GcpStack extends TerraformStack {
       });
     }
     if (!this.existingStaticIpVpcSubnets.includes(vpcAccessConnectorCidrRange)) {
-      new VpcAccessConnector(this, vpcAccessConnectorName, {
+      new vpcAccessConnector.VpcAccessConnector(this, vpcAccessConnectorName, {
         name: vpcAccessConnectorName,
         network: netName,
         ipCidrRange: vpcAccessConnectorCidrRange,
@@ -258,12 +470,12 @@ export default class GcpStack extends TerraformStack {
     const secrets = this.options.secretNames?.filter(secret => secret.length);
 
     secrets?.forEach(secret => {
-      const gcpSecret = new SecretManagerSecret(this, secret, {
+      const gcpSecret = new secretManagerSecret.SecretManagerSecret(this, secret, {
         secretId: secret,
-        replication: { automatic: true },
+        replication: { auto: {} },
       });
 
-      new SecretManagerSecretVersion(this, secret + "-version", {
+      new secretManagerSecretVersion.SecretManagerSecretVersion(this, secret + "-version", {
         secret: gcpSecret.id,
         secretData: "INITIAL_VALUE_DO_NOT_DELETE",
       });
