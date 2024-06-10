@@ -234,6 +234,16 @@ export default class GcpStack extends TerraformStack {
           member: "allUsers",
         },
       );
+
+      new cloudRunServiceIamMember.CloudRunServiceIamMember(
+        this,
+        config.name + "-http-run-invoker",
+        {
+          service: func.serviceConfig.service,
+          role: "roles/run.invoker",
+          member: "allUsers",
+        },
+      );
     }
   }
 
