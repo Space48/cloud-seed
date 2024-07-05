@@ -32,6 +32,7 @@ export type EventConfig = {
 export type ScheduleConfig = {
   type: "schedule";
   schedule: string;
+  timeZone?: string;
 } & FunctionConfig;
 
 export type QueueConfig = {

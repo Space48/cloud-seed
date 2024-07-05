@@ -118,6 +118,7 @@ export default class GcpStack extends TerraformStack {
       new CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
+        timeZone: func.timeZone,
         pubsubTarget: {
           topicName: `projects/${this.options.gcpOptions.project}/topics/${scheduledTopic.name}`,
           data: "c2NoZWR1bGU=",
