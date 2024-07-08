@@ -33,6 +33,7 @@ export type EventConfig = {
 export type ScheduleConfig = {
   type: "schedule";
   schedule: string;
+  timeZone?: string;
 } & FunctionConfig;
 
 // This is to trigger the cloud function directly from scheduled job, rather than triggering through a pub/sub topic
@@ -40,6 +41,7 @@ export type ScheduledJobConfig = {
   type: "scheduledJob";
   schedule: string;
   attemptDeadline?: string;
+  timeZone?: string;
 } & FunctionConfig;
 
 export type QueueConfig = {
