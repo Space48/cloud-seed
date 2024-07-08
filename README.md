@@ -91,7 +91,7 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
-### Scheduled functions:
+### Scheduled functions using pub/sub topic:
 
 ```typescript
 import { CloudEventFunction } from "@google-cloud/functions-framework";
@@ -107,6 +107,28 @@ export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "schedule",
   schedule: "* * * * *",
+};
+```
+
+### Scheduled functions without using pub/sub topic:
+Supported only in gen 2 supported versions of cloud-seed
+
+```typescript
+import { CloudEventFunction } from "@google-cloud/functions-framework";
+import type { GcpConfig } from "@space48/cloud-seed";
+
+const fn: CloudEventFunction = (data) => {
+  console.log("This is a scheduled triggered function, triggered directly from the scheduled job", data);
+};
+
+export default fn;
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  schedule: "* * * * *",
+  type: "scheduledJob",
+  version: "gen2",
+  attemptDeadline: "1800s", // optional, this is set as 3 minutes by default
 };
 ```
 
@@ -285,6 +307,57 @@ new CustomStack(app, "CustomStack", config);
 
 app.synth();
 ```
+# Cloud functions gen 2
+It is recommended by google to use the [gen 2](https://cloud.google.com/functions/docs/concepts/version-comparison) functions wherever possible.
+
+The cloud-seed `v1.3.6-alpha` is an upgraded version to use gen 2 functions, which is still in alpha stage. This is currently being used in [Sneakers-n-stuff](https://bitbucket.org/space48/sneakersnstuff-backend).
+
+If you upgrade a project, that is using an older version of cloud-seed (ex:`v1.3.0` is the latest stable version) to the `1.3.6-alpha` version, all the existing cloud functions (which use older `csktf` npm modules) will be deleted and recreated. This can lead to an issue as functions/topics/secrets can't be created with the same name for 7 days, when they get deleted. Therefore upgrading a project that uses cloud-seed, has to be done cautiously.
+
+But for a new project it is recommended to use the `1.3.6-alpha` version with gen 2 functions support.
+
+### Add a cloud 2 function
+The structure is similar to what is explained above. But in runtime config add `version: "gen2"`
+
+```typescript
+export const runtimeConfig: GcpConfig = {
+  runtime: "nodejs18",
+  cloud: "gcp",
+  type: "schedule",
+  schedule: "0 0 * * *",
+  memory: 2048,
+  timeout: 540,
+  version: "gen2",
+};
+```
+
+If a version is not given, the function will be automatically added as a gen 1.
+
+### prerequisites
+
+- __`python` and `make` should be installed in the build server__
+
+1. add to the bitbucket pipeline build step
+
+```yaml
+ - step: &build
+        name: "Build"
+        caches:
+          - npm
+        script:
+          # Install Python and Make
+          - chmod +x ./bitbucket-pipelines/install_python_and_make.sh
+          - ./bitbucket-pipelines/install_python_and_make.sh
+```
+
+2. Add a new bash script: `install_python_and_make.sh`
+
+```bash
+#!/bin/bash
+apt update && apt -y install python3 && apt -y install build-essential
+```
+
+- __Enable Eventarc API in GCP as gen2 cloud functions are built on Cloud Run and Eventarc__
 
 # Licence and acknowledgements
 

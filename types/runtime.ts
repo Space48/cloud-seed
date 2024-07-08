@@ -14,6 +14,7 @@ export type FunctionConfig = {
   staticIp?: boolean;
   maxInstances?: number;
   minInstances?: number;
+  version?: string;
 };
 
 export type HttpConfig = {
@@ -33,6 +34,13 @@ export type ScheduleConfig = {
   type: "schedule";
   schedule: string;
   timeZone?: string;
+} & FunctionConfig;
+
+// This is to trigger the cloud function directly from scheduled job, rather than triggering through a pub/sub topic
+export type ScheduledJobConfig = {
+  type: "scheduledJob";
+  schedule: string;
+  attemptDeadline?: string;
 } & FunctionConfig;
 
 export type QueueConfig = {
@@ -70,6 +78,7 @@ export type GcpConfig = (
   | QueueConfig
   | FirestoreConfig
   | StorageConfig
+  | ScheduledJobConfig
 ) & {
   cloud: "gcp";
   name?: string;
