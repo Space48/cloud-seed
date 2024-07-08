@@ -171,6 +171,7 @@ export default class GcpStack extends TerraformStack {
         name: func.name,
         schedule: func.schedule,
         attemptDeadline: func.attemptDeadline || "3m",
+        timeZone: func.timeZone,
         httpTarget: {
           uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
           httpMethod: "POST",

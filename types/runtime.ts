@@ -41,6 +41,7 @@ export type ScheduledJobConfig = {
   type: "scheduledJob";
   schedule: string;
   attemptDeadline?: string;
+  timeZone?: string;
 } & FunctionConfig;
 
 export type QueueConfig = {
