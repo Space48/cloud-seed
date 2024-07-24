@@ -83,4 +83,5 @@ export type GcpConfig = (
 ) & {
   cloud: "gcp";
   name?: string;
+  environmentOverrides?: Partial<Record<string, Partial<Omit<GcpConfig, "environmentOverrides">>>>;
 };

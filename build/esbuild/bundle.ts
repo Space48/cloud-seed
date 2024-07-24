@@ -4,7 +4,12 @@ import { readFileSync, writeFileSync } from "fs";
 import { BuildOptions, buildSync } from "esbuild";
 import { join, relative } from "path";
 
-const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptions>) => {
+const bundle = (
+  dir: string,
+  outDir: string,
+  environment?: string,
+  esbuildOptions?: Partial<BuildOptions>,
+) => {
   const files = sync(join(dir, "**/*.ts"));
 
   let runtimeConfig: any = null;
@@ -21,6 +26,7 @@ const bundle = (dir: string, outDir: string, esbuildOptions?: Partial<BuildOptio
     runtimeConfig = detectRuntimeConfig(sourceFile);
 
     if (runtimeConfig !== null) {
+      runtimeConfig = applyEnvironmentOverrides(environment, runtimeConfig);
       runtimeConfigs.push({
         file,
         name: generateFunctionName(file),
@@ -54,6 +60,23 @@ function generateFunctionName(file: string) {
     .replace(/[-]{2,}/g, "-")
     .replace(/^[-]+/, "")
     .replace(/[-]+$/, "");
+}
+
+function applyEnvironmentOverrides(
+  environment: string | undefined,
+  runtimeConfig: Record<string, unknown>,
+) {
+  if (environment === undefined) return runtimeConfig;
+
+  const { environmentOverrides, ...rest } = runtimeConfig;
+
+  if (!isObjectLike(environmentOverrides)) return { ...rest };
+
+  const overrides = environmentOverrides[environment];
+
+  if (!isObjectLike(overrides)) return { ...rest };
+
+  return { ...rest, ...overrides };
 }
 
 function detectRuntimeConfig(node: ts.Node) {
@@ -117,4 +140,8 @@ function mapNode(node: ts.Node): any {
   }
 
   return "UNSUPPORTED";
+}
+
+function isObjectLike(value: unknown): value is Partial<Record<string | number | symbol, unknown>> {
+  return typeof value === "object" && value !== null;
 }
