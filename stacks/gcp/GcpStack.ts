@@ -88,6 +88,13 @@ export default class GcpStack extends TerraformStack {
       });
     }
 
+    const environmentVariables = {
+      CLOUD_SEED_ENVIRONMENT: this.options.environment,
+      CLOUD_SEED_PROJECT: this.options.gcpOptions.project,
+      CLOUD_SEED_REGION: this.options.gcpOptions.region,
+      ...envVars,
+    };
+
     if (func.version === "gen1") {
       cloudFunc = new cloudfunctionsFunction.CloudfunctionsFunction(this, func.name, {
         name: func.name,
@@ -99,12 +106,7 @@ export default class GcpStack extends TerraformStack {
         entryPoint: "default",
         maxInstances: func.maxInstances,
         minInstances: func.minInstances,
-        environmentVariables: {
-          NODE_ENV: this.options.environment,
-          GCP_PROJECT: this.options.gcpOptions.project,
-          GCP_REGION: this.options.gcpOptions.region,
-          ...envVars,
-        },
+        environmentVariables,
 
         ...this.generateFunctionTriggerConfig(func),
       });
@@ -112,18 +114,12 @@ export default class GcpStack extends TerraformStack {
         this.configureHttpFunction(func, cloudFunc);
       }
     } else {
-      const env = {
-        NODE_ENV: this.options.environment,
-        GCP_PROJECT: this.options.gcpOptions.project,
-        GCP_REGION: this.options.gcpOptions.region,
-        ...envVars,
-      };
       cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
         name: func.name,
         buildConfig: {
           runtime: func.runtime,
           source: { storageSource: { bucket: bucket.name, object: object.name } },
-          environmentVariables: env,
+          environmentVariables,
           entryPoint: "default",
         },
         serviceConfig: {
@@ -131,7 +127,7 @@ export default class GcpStack extends TerraformStack {
           timeoutSeconds: func.timeout ?? 60,
           maxInstanceCount: func.maxInstances,
           minInstanceCount: func.minInstances,
-          environmentVariables: env,
+          environmentVariables,
         },
         location: this.options.gcpOptions.region,
         ...this.generateFunction2TriggerConfig(func, scheduledTopic),
