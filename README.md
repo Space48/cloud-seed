@@ -200,6 +200,26 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
+## Environment-level function configuration
+
+You can override any value in `runtimeConfig` for a specific environment by including an `environmentOverrides` object. For example:
+
+```typescript
+import { GcpConfig } from "@space48/cloud-seed";
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  type: "http",
+  public: true,
+  minInstances: 0,
+  environmentOverrides: {
+    production: {
+      minInstances: 1,
+    },
+  },
+};
+```
+
 ## Setting up a config file:
 
 You can set the cloud seed config by adding a `cloudseed.json` file in the project root directory. An example is provided below:
