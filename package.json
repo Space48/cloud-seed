@@ -33,13 +33,12 @@
     "arg": "^5.0.2",
     "cdktf": "^0.20.3",
     "cdktf-cli": "^0.20.3",
-    "constructs": "^10.3.0",
+    "constructs": "^10.4.2",
     "esbuild": "^0.15.5",
-    "glob": "^8.0.3",
+    "glob": "^11.0.0",
     "typescript": "^4.7.4"
   },
   "devDependencies": {
-    "@types/glob": "^7.2.0",
     "@types/jest": "^27.0.3",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
