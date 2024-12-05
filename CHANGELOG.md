@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/Space48/cloud-seed/compare/v3.0.0...HEAD)
 
+### Breaking changes
+
+- The package no longer supports deprecated Node.js engine versions. Upgrade your project to Node.js v20 or later.
+
+### Changed
+
+- Updated package dependencies
+
 ## [v3.0.0](https://github.com/Space48/cloud-seed/compare/v2.1.0...v3.0.0)
 
 ### Breaking changes
