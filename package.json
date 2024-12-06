@@ -29,13 +29,13 @@
   "author": "Ash Smith <ash@space48.com>",
   "license": "ISC",
   "dependencies": {
-    "@cdktf/provider-archive": "^10.0.1",
-    "@cdktf/provider-google": "^13.3.0",
+    "@cdktf/provider-archive": "^10.3.0",
+    "@cdktf/provider-google": "^14.11.0",
     "arg": "^5.0.2",
-    "cdktf": "^0.20.3",
-    "cdktf-cli": "^0.20.3",
+    "cdktf": "^0.20.10",
+    "cdktf-cli": "^0.20.10",
     "constructs": "^10.4.2",
-    "esbuild": "^0.15.5",
+    "esbuild": "^0.24.0",
     "glob": "^11.0.0",
     "typescript": "^5.7.2"
   },
