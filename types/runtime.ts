@@ -93,7 +93,7 @@ export type GcpConfig = (
         | FirestoreConfig
         | StorageConfig
         | ScheduledJobConfig,
-        "type" | "cloud" // Prevent changing the function type or cloud provider in env overrides
+        "cloud" // Prevent changing the cloud provider in environment overrides
       >
     >;
   };
