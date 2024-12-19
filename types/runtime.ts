@@ -83,5 +83,18 @@ export type GcpConfig = (
 ) & {
   cloud: "gcp";
   name?: string;
-  environmentOverrides?: Partial<Record<string, Partial<Omit<GcpConfig, "environmentOverrides">>>>;
+  environmentOverrides?: {
+    [env: string]: Partial<
+      Omit<
+        | HttpConfig
+        | EventConfig
+        | ScheduleConfig
+        | QueueConfig
+        | FirestoreConfig
+        | StorageConfig
+        | ScheduledJobConfig,
+        "type" | "cloud" // Prevent changing the function type or cloud provider in env overrides
+      >
+    >;
+  };
 };
