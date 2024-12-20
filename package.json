@@ -21,7 +21,7 @@
     "build": "rimraf dist && tsc",
     "lint": "eslint --fix './**/*.ts'",
     "lint:ci": "eslint './**/*.ts'",
-    "test": "jest --passWithNoTests --coverage"
+    "test": "jest --passWithNoTests --coverage --forceExit"
   },
   "engines": {
     "node": ">=20"
