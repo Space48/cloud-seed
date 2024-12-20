@@ -30,12 +30,19 @@ jest.mock('../../build');
 describe('cmdBuild', () => {
   // Store original console.log
   const originalConsoleLog = console.log;
+  let mockExistsSync: jest.SpiedFunction<typeof fs.existsSync>;
+  let mockResolve: jest.SpiedFunction<typeof path.resolve>;
   
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
-    (path.resolve as jest.Mock).mockImplementation((...args) => args.join('/'));
+    
+    // Setup fs.existsSync mock
+    mockExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    
+    // Setup path.resolve mock
+    mockResolve = jest.spyOn(path, 'resolve').mockImplementation((...args) => args.join('/'));
+    
     // Mock console.log
     console.log = jest.fn();
   });
@@ -43,6 +50,8 @@ describe('cmdBuild', () => {
   afterEach(() => {
     // Restore console.log after each test
     console.log = originalConsoleLog;
+    mockExistsSync.mockRestore();
+    mockResolve.mockRestore();
   });
 
   afterAll(() => {
@@ -100,7 +109,7 @@ describe('cmdBuild', () => {
    */
   test('validates project directory exists', () => {
     const mockPrintAndExit = utils.printAndExit as jest.MockedFunction<typeof utils.printAndExit>;
-    (fs.existsSync as jest.Mock).mockReturnValue(false);
+    mockExistsSync.mockReturnValue(false);
     
     cmdBuild(['--env', 'prod', '/non/existent/dir']);
     
@@ -198,7 +207,7 @@ describe('cmdBuild', () => {
    * Any unexpected errors should be thrown rather than handled silently
    */
   test('throws error for non-ARG_UNKNOWN_OPTION errors', () => {
-    (fs.existsSync as jest.Mock).mockImplementation(() => {
+    mockExistsSync.mockImplementation(() => {
       throw new Error('Some other error');
     });
 

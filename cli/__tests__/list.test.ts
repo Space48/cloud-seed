@@ -30,12 +30,19 @@ jest.mock('../../list');
 describe('cmdList', () => {
   // Store original console.log
   const originalConsoleLog = console.log;
+  let mockExistsSync: jest.SpiedFunction<typeof fs.existsSync>;
+  let mockResolve: jest.SpiedFunction<typeof path.resolve>;
   
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
-    (path.resolve as jest.Mock).mockImplementation((...args) => args.join('/'));
+    
+    // Setup fs.existsSync mock
+    mockExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    
+    // Setup path.resolve mock
+    mockResolve = jest.spyOn(path, 'resolve').mockImplementation((...args) => args.join('/'));
+    
     // Mock console.log
     console.log = jest.fn();
   });
@@ -43,6 +50,8 @@ describe('cmdList', () => {
   afterEach(() => {
     // Restore console.log after each test
     console.log = originalConsoleLog;
+    mockExistsSync.mockRestore();
+    mockResolve.mockRestore();
   });
 
   afterAll(() => {
@@ -71,7 +80,7 @@ describe('cmdList', () => {
    */
   test('validates out directory exists when specified', () => {
     const mockPrintAndExit = utils.printAndExit as jest.MockedFunction<typeof utils.printAndExit>;
-    (fs.existsSync as jest.Mock).mockReturnValue(false);
+    mockExistsSync.mockReturnValue(false);
     
     cmdList(['--out-dir', '/non/existent/dir']);
     
