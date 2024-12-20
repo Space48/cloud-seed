@@ -83,5 +83,15 @@ export type GcpConfig = (
 ) & {
   cloud: "gcp";
   name?: string;
-  environmentOverrides?: Partial<Record<string, Partial<Omit<GcpConfig, "environmentOverrides">>>>;
+  environmentOverrides?: Partial<{
+    [env: string]: Partial<
+      | HttpConfig
+      | EventConfig
+      | ScheduleConfig
+      | QueueConfig
+      | FirestoreConfig
+      | StorageConfig
+      | ScheduledJobConfig
+    >;
+  }>;
 };
