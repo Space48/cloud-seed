@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/Space48/cloud-seed/compare/v3.0.0...HEAD)
 
+### Breaking changes
+
+- The package no longer supports deprecated Node.js engine versions. Upgrade your project to Node.js v20 or later.
+- Esbuild, which is used to build and bundle the source code for functions, has been upgraded through several breaking versions. Ensure you complete full regression testing of your functions after upgrading.
+
 ### Changed
 
+- Updated package dependencies
 - Enhanced type safety for environment-specific configurations
 
 
