@@ -18,18 +18,17 @@ jest.mock("../utils", () => ({
 }));
 jest.mock("../../build");
 
+// Mock fs and path modules
+jest.mock("fs");
+jest.mock("path");
+
 // Create mock functions for fs and path
 const mockExistsSync = jest.fn();
 const mockResolve = jest.fn();
 
-// Mock fs and path modules
-jest.mock("fs", () => ({
-  existsSync: mockExistsSync,
-}));
-
-jest.mock("path", () => ({
-  resolve: mockResolve,
-}));
+// Override module exports with mocks
+jest.mocked(require("fs")).existsSync = mockExistsSync;
+jest.mocked(require("path")).resolve = mockResolve;
 
 /**
  * Test suite for the build command

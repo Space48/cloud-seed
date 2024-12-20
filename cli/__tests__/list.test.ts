@@ -18,18 +18,17 @@ jest.mock("../utils", () => ({
 }));
 jest.mock("../../list");
 
+// Mock fs and path modules
+jest.mock("fs");
+jest.mock("path");
+
 // Create mock functions for fs and path
 const mockExistsSync = jest.fn();
 const mockResolve = jest.fn();
 
-// Mock fs and path modules
-jest.mock("fs", () => ({
-  existsSync: mockExistsSync,
-}));
-
-jest.mock("path", () => ({
-  resolve: mockResolve,
-}));
+// Override module exports with mocks
+jest.mocked(require("fs")).existsSync = mockExistsSync;
+jest.mocked(require("path")).resolve = mockResolve;
 
 /**
  * Test suite for the list command
@@ -39,15 +38,15 @@ jest.mock("path", () => ({
 describe("cmdList", () => {
   // Store original console.log
   const originalConsoleLog = console.log;
-
+  
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-
+    
     // Setup default mock implementations
     mockExistsSync.mockReturnValue(true);
     mockResolve.mockImplementation((...args) => args.join("/"));
-
+    
     // Mock console.log
     console.log = jest.fn();
   });
@@ -68,10 +67,13 @@ describe("cmdList", () => {
    */
   test("displays help message when --help flag is used", () => {
     const mockPrintAndExit = utils.printAndExit as jest.MockedFunction<typeof utils.printAndExit>;
-
+    
     cmdList(["--help"]);
-
-    expect(mockPrintAndExit).toHaveBeenCalledWith(expect.stringContaining("Usage"), 0);
+    
+    expect(mockPrintAndExit).toHaveBeenCalledWith(
+      expect.stringContaining("Usage"),
+      0
+    );
   });
 
   /**
@@ -81,10 +83,12 @@ describe("cmdList", () => {
   test("validates out directory exists when specified", () => {
     const mockPrintAndExit = utils.printAndExit as jest.MockedFunction<typeof utils.printAndExit>;
     mockExistsSync.mockReturnValue(false);
-
+    
     cmdList(["--out-dir", "/non/existent/dir"]);
-
-    expect(mockPrintAndExit).toHaveBeenCalledWith(expect.stringContaining("/non/existent/dir"));
+    
+    expect(mockPrintAndExit).toHaveBeenCalledWith(
+      expect.stringContaining("/non/existent/dir")
+    );
   });
 
   /**
@@ -94,12 +98,10 @@ describe("cmdList", () => {
   test("calls list with correct parameters", () => {
     const mockList = list as jest.MockedFunction<typeof list>;
     const args = ["--out-dir", "/output/dir"];
-
+    
     cmdList(args);
-
-    expect(mockList).toHaveBeenCalledWith({
-      outDir: "/output/dir",
-    });
+    
+    expect(mockList).toHaveBeenCalledWith("/output/dir");
   });
 
   /**
@@ -108,10 +110,10 @@ describe("cmdList", () => {
    */
   test("calls list with undefined when no out-dir specified", () => {
     const mockList = list as jest.MockedFunction<typeof list>;
-
+    
     cmdList([]);
-
-    expect(mockList).toHaveBeenCalledWith({});
+    
+    expect(mockList).toHaveBeenCalledWith(undefined);
   });
 
   /**
@@ -120,9 +122,11 @@ describe("cmdList", () => {
    */
   test("handles unknown options gracefully", () => {
     const mockPrintAndExit = utils.printAndExit as jest.MockedFunction<typeof utils.printAndExit>;
-
+    
     cmdList(["--unknown-flag"]);
-
-    expect(mockPrintAndExit).toHaveBeenCalledWith(expect.stringContaining("--unknown-flag"));
+    
+    expect(mockPrintAndExit).toHaveBeenCalledWith(
+      expect.stringContaining("--unknown-flag")
+    );
   });
 });
