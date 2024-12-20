@@ -1,7 +1,6 @@
 /**
- * Tests for utility functions used across the CLI.
- * These tests verify the behavior of common utility functions
- * that are shared between different CLI commands.
+ * Tests for the utilities module.
+ * These tests verify the behavior of utility functions used across the CLI.
  */
 
 import { jest } from "@jest/globals";
@@ -9,56 +8,59 @@ import { printAndExit } from "../utils";
 
 /**
  * Test suite for the printAndExit utility function
- * Tests the behavior of printing messages and exiting with specific status codes
+ * Verifies the function's behavior with different message types and exit codes
  */
 describe("printAndExit", () => {
-  // Declare mock function types for better type safety
-  let mockConsoleLog: jest.SpiedFunction<typeof console.log>;
-  let mockProcessExit: jest.SpiedFunction<typeof process.exit>;
+  // Store original console.log and process.exit
+  const originalConsoleLog = console.log;
+  const originalProcessExit = process.exit;
 
-  /**
-   * Set up test environment before each test
-   * Mock console.log and process.exit to prevent actual side effects
-   */
   beforeEach(() => {
-    mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
-    mockProcessExit = jest.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    // Reset all mocks before each test
+    jest.clearAllMocks();
+
+    // Mock console.log
+    console.log = jest.fn();
+
+    // Mock process.exit
+    process.exit = jest.fn() as jest.MockedFunction<typeof process.exit>;
   });
 
-  /**
-   * Clean up test environment after each test
-   * Restore original console.log and process.exit functionality
-   */
   afterEach(() => {
-    mockConsoleLog.mockRestore();
-    mockProcessExit.mockRestore();
+    // Restore original functions after each test
+    console.log = originalConsoleLog;
+    process.exit = originalProcessExit;
+  });
+
+  afterAll(() => {
+    // Ensure original functions are restored after all tests
+    console.log = originalConsoleLog;
+    process.exit = originalProcessExit;
   });
 
   /**
-   * Test case: printAndExit prints message and exits with default code 1
-   * Verifies that printAndExit logs the provided message and exits with status code 1
+   * Verify that printAndExit logs the message and exits with code 1 by default
    */
-  test("prints message and exits with default code 1", () => {
-    const message = "Test error message";
+  test("logs message and exits with code 1 by default", () => {
+    const message = "Error message";
 
     printAndExit(message);
 
-    expect(mockConsoleLog).toHaveBeenCalledWith(message);
-    expect(mockProcessExit).toHaveBeenCalledWith(1);
+    expect(console.log).toHaveBeenCalledWith(message);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
   /**
-   * Test case: printAndExit prints message and exits with specified code
-   * Verifies that printAndExit logs the provided message and exits with the specified status code
+   * Verify that printAndExit logs the message and exits with specified code
    */
-  test("prints message and exits with specified code", () => {
-    const message = "Test success message";
+  test("logs message and exits with specified code", () => {
+    const message = "Success message";
     const exitCode = 0;
 
     printAndExit(message, exitCode);
 
-    expect(mockConsoleLog).toHaveBeenCalledWith(message);
-    expect(mockProcessExit).toHaveBeenCalledWith(exitCode);
+    expect(console.log).toHaveBeenCalledWith(message);
+    expect(process.exit).toHaveBeenCalledWith(exitCode);
   });
 
   /**
@@ -70,7 +72,7 @@ describe("printAndExit", () => {
 
     printAndExit(message);
 
-    expect(mockConsoleLog).toHaveBeenCalledWith(message);
-    expect(mockProcessExit).toHaveBeenCalledWith(1);
+    expect(console.log).toHaveBeenCalledWith(message);
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 });

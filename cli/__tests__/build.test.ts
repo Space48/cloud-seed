@@ -7,8 +7,6 @@
 import { jest } from "@jest/globals";
 import { cmdBuild } from "../build";
 import * as utils from "../utils";
-import * as fs from "fs";
-import * as path from "path";
 import build from "../../build";
 
 // Mock dependencies
@@ -18,9 +16,20 @@ jest.mock("../utils", () => ({
     return message;
   }),
 }));
-jest.mock("fs");
-jest.mock("path");
 jest.mock("../../build");
+
+// Create mock functions for fs and path
+const mockExistsSync = jest.fn();
+const mockResolve = jest.fn();
+
+// Mock fs and path modules
+jest.mock("fs", () => ({
+  existsSync: mockExistsSync,
+}));
+
+jest.mock("path", () => ({
+  resolve: mockResolve,
+}));
 
 /**
  * Test suite for the build command
@@ -30,18 +39,14 @@ jest.mock("../../build");
 describe("cmdBuild", () => {
   // Store original console.log
   const originalConsoleLog = console.log;
-  let mockExistsSync: jest.SpiedFunction<typeof fs.existsSync>;
-  let mockResolve: jest.SpiedFunction<typeof path.resolve>;
 
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
 
-    // Setup fs.existsSync mock
-    mockExistsSync = jest.spyOn(fs, "existsSync").mockReturnValue(true);
-
-    // Setup path.resolve mock
-    mockResolve = jest.spyOn(path, "resolve").mockImplementation((...args) => args.join("/"));
+    // Setup default mock implementations
+    mockExistsSync.mockReturnValue(true);
+    mockResolve.mockImplementation((...args) => args.join("/"));
 
     // Mock console.log
     console.log = jest.fn();
@@ -50,8 +55,6 @@ describe("cmdBuild", () => {
   afterEach(() => {
     // Restore console.log after each test
     console.log = originalConsoleLog;
-    mockExistsSync.mockRestore();
-    mockResolve.mockRestore();
   });
 
   afterAll(() => {

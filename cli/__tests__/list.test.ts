@@ -7,8 +7,6 @@
 import { jest } from "@jest/globals";
 import { cmdList } from "../list";
 import * as utils from "../utils";
-import * as fs from "fs";
-import * as path from "path";
 import list from "../../list";
 
 // Mock dependencies
@@ -18,9 +16,20 @@ jest.mock("../utils", () => ({
     return message;
   }),
 }));
-jest.mock("fs");
-jest.mock("path");
 jest.mock("../../list");
+
+// Create mock functions for fs and path
+const mockExistsSync = jest.fn();
+const mockResolve = jest.fn();
+
+// Mock fs and path modules
+jest.mock("fs", () => ({
+  existsSync: mockExistsSync,
+}));
+
+jest.mock("path", () => ({
+  resolve: mockResolve,
+}));
 
 /**
  * Test suite for the list command
@@ -30,18 +39,14 @@ jest.mock("../../list");
 describe("cmdList", () => {
   // Store original console.log
   const originalConsoleLog = console.log;
-  let mockExistsSync: jest.SpiedFunction<typeof fs.existsSync>;
-  let mockResolve: jest.SpiedFunction<typeof path.resolve>;
 
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
 
-    // Setup fs.existsSync mock
-    mockExistsSync = jest.spyOn(fs, "existsSync").mockReturnValue(true);
-
-    // Setup path.resolve mock
-    mockResolve = jest.spyOn(path, "resolve").mockImplementation((...args) => args.join("/"));
+    // Setup default mock implementations
+    mockExistsSync.mockReturnValue(true);
+    mockResolve.mockImplementation((...args) => args.join("/"));
 
     // Mock console.log
     console.log = jest.fn();
@@ -50,8 +55,6 @@ describe("cmdList", () => {
   afterEach(() => {
     // Restore console.log after each test
     console.log = originalConsoleLog;
-    mockExistsSync.mockRestore();
-    mockResolve.mockRestore();
   });
 
   afterAll(() => {
@@ -72,7 +75,7 @@ describe("cmdList", () => {
   });
 
   /**
-   * Verify that the output directory exists when specified
+   * Verify that the out directory exists when specified
    * The command should exit with an error if the specified directory doesn't exist
    */
   test("validates out directory exists when specified", () => {
@@ -86,27 +89,29 @@ describe("cmdList", () => {
 
   /**
    * Verify that the list function is called with correct parameters
-   * Tests the proper parsing and forwarding of output directory argument
+   * Tests the proper parsing and forwarding of all command line arguments
    */
   test("calls list with correct parameters", () => {
     const mockList = list as jest.MockedFunction<typeof list>;
-    const outDir = "/output/dir";
+    const args = ["--out-dir", "/output/dir"];
 
-    cmdList(["--out-dir", outDir]);
+    cmdList(args);
 
-    expect(mockList).toHaveBeenCalledWith(outDir);
+    expect(mockList).toHaveBeenCalledWith({
+      outDir: "/output/dir",
+    });
   });
 
   /**
-   * Verify that the list function is called without outDir when not specified
-   * Tests the default behavior when no output directory is provided
+   * Verify that the list function is called with undefined when no out-dir is specified
+   * Tests the default behavior for output directory
    */
   test("calls list with undefined when no out-dir specified", () => {
     const mockList = list as jest.MockedFunction<typeof list>;
 
     cmdList([]);
 
-    expect(mockList).toHaveBeenCalledWith(undefined);
+    expect(mockList).toHaveBeenCalledWith({});
   });
 
   /**
