@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/Space48/cloud-seed/compare/v4.0.0...HEAD)
 
+### Added
+
+- Cloud Seed commands can now discover the cloudseed.json configuration file for the project when run from within a subdirectory.
+
 ## [v4.0.0](https://github.com/Space48/cloud-seed/compare/v3.0.0...v4.0.0)
 
 ### Breaking changes
