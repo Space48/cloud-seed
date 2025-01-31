@@ -41,6 +41,23 @@ terraform chdir=[buildDir] plan -out=plan
 terraform chdir=[buildDir] apply plan
 ```
 
+## Running functions locally for testing
+
+You can start the local development server for a function by running:
+
+```
+npx @space48/cloud-seed run src/myFirstFunction.ts --env environment
+```
+
+The development server will build the function and expose it on http://localhost:3000/ so you can trigger it with a HTTP request. Any changes you make to the source code of the function will rebuild it and restart the server, allowing you to keep testing without having to manually run any additional commands.
+
+Tips and tricks:
+
+- The development server does not require access to a cloud project to run the function locally. However, if your function code accesses any cloud resources, such as message queues or databases, you will need to authenticate with the cloud to allow it. For example, you can authenticate with GCP by running the `gcloud auth login` command in gcloud CLI.
+- The development server runs a single cloud function in isolation. If you want to test multiple functions, you can run multiple development servers on different ports using the `--port` option. Keep in mind that this won't automatically connect the functions and allow then to interract with each other. Your function code will have to be aware that it is running in development and adjust the endpoints it uses accordingly. You can use the `CLOUD_SEED_ENVIRONMENT` environment variable to write conditional code for running in the development environment.
+- Any cloud function can be triggered by a HTTP request, regardless of its type. However, some function types may require the request data to follow a specific format or use a specific encoding. Refer to the official documentation for the cloud service you're using for details on how to format your function input.
+- The development server automatically loads the environment variables you have defined in `cloudseed.json` for the provided environment and exposes them to the function. You can use this to configure a dedicated development environment, with appropriate configuration, to be shared by anyone running the project locally. Additionally, any environment variables with the same names defined in your environment will override the values from the configuration file. This is useful to temporarily modify the configuration for testing without having to modify the `cloudseed.json` file.
+
 # How does this work?
 
 Each Cloud Function you wish to define can live anywhere within the `src` directory, how you structure this is up to you.
