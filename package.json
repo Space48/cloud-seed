@@ -42,6 +42,7 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@tsconfig/node20": "^20.1.4",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.10.0",
     "eslint": "^9.16.0",
     "eslint-config-prettier": "^9.1.0",
