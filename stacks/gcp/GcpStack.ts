@@ -166,7 +166,7 @@ export default class GcpStack extends TerraformStack {
       new cloudSchedulerJob.CloudSchedulerJob(this, "scheduler-" + func.name, {
         name: func.name,
         schedule: func.schedule,
-        attemptDeadline: func.attemptDeadline || "3m",
+        attemptDeadline: func.attemptDeadline || "180s",
         timeZone: func.timeZone,
         httpTarget: {
           uri: (cloudFunc as cloudfunctions2Function.Cloudfunctions2Function).serviceConfig.uri,
@@ -301,8 +301,8 @@ export default class GcpStack extends TerraformStack {
       config.retryOnFailure === undefined
         ? "RETRY_POLICY_UNSPECIFIED"
         : config.retryOnFailure
-        ? "RETRY_POLICY_RETRY"
-        : "RETRY_POLICY_DO_NOT_RETRY";
+          ? "RETRY_POLICY_RETRY"
+          : "RETRY_POLICY_DO_NOT_RETRY";
 
     switch (config.type) {
       case "queue":
