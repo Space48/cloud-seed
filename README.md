@@ -2,10 +2,20 @@
 
 ## Using on a project:
 
-Add the package as a dev dependency (note you'll need to authenticate with github packages).
+Add the package as a dev dependency:
 ```
 npm install -D @space48/cloud-seed
 ```
+
+> **Note:** Versions prior to 4.1.2 were published to GitHub Packages. Starting with version 4.1.2, all versions are published to npm, as per the [Space48 package publishing guidelines](https://codex.s48.dev/docs/PackageManagement/Publishing/npm). If you need to install an older version (< 4.1.2), you'll need to configure npm to use GitHub Packages.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+## Releasing
+
+For information about the release process, please see [RELEASING.md](RELEASING.md).
 
 Define your first cloud function:
 

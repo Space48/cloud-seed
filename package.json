@@ -1,6 +1,6 @@
 {
   "name": "@space48/cloud-seed",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "description": "Cloud infrastructure automation tool that uses Terraform CDK.",
   "main": "dist/index.js",
   "bin": {
@@ -11,7 +11,7 @@
     "schemas"
   ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "access": "public"
   },
   "repository": "https://github.com/Space48/cloud-seed",
   "scripts": {
@@ -26,8 +26,8 @@
   "engines": {
     "node": ">=20"
   },
-  "author": "Ash Smith <ash@space48.com>",
-  "license": "ISC",
+  "author": "Space48 <webmaster@space48.com>",
+  "license": "MIT",
   "dependencies": {
     "@cdktf/provider-archive": "^10.3.0",
     "@cdktf/provider-google": "^14.11.0",

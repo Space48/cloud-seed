@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/Space48/cloud-seed/compare/v4.1.0...HEAD)
 
+### Added
+
+- Added CONTRIBUTING.md with comprehensive contribution guidelines
+- Added RELEASING.md with documentation on the release process
+- Added GitHub PR template with detailed checklists for contributors
+- Added CODEOWNERS file for automatic PR reviewer assignment
+- Added GitHub Actions workflows for automated releases (both regular and beta)
+- Added automatic GitHub release creation with changelog content
+
+### Changed
+
+- Package publishing moved from GitHub Packages to npm registry in accordance with [Space48 package publishing guidelines](https://codex.s48.dev/docs/PackageManagement/Publishing/npm)
+- Updated license in package.json from ISC to MIT to match LICENSE.md
+- Updated README.md with links to contribution and release documentation
+
 ## [v4.1.0](https://github.com/Space48/cloud-seed/compare/v4.0.0...v4.1.0)
 
 ### Added
