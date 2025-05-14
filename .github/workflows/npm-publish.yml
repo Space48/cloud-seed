@@ -1,0 +1,120 @@
+name: NPM Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Run tests
+        run: npm run test
+        
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Extract changelog for version
+        id: extract-changelog
+        run: |
+          VERSION="v${{ steps.package-version.outputs.version }}"
+          echo "Extracting changelog for $VERSION"
+          
+          # Create a tag for the version
+          git tag $VERSION
+          
+          # Extract changelog for the current version
+          CHANGELOG_CONTENT=$(awk -v ver="$VERSION" '
+          BEGIN { in_section = 0; }
+          /^## \[/ {
+            if (in_section) { exit; }
+            if ($0 ~ ver) { in_section = 1; next; }
+          }
+          in_section == 1 { print; }
+          ' CHANGELOG.md)
+          
+          # Store changelog content in output variable, handling multiline output
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.PACKAGE_VERSION;
+            const changelog = process.env.CHANGELOG;
+            
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${version}`,
+              name: `Release v${version}`,
+              body: changelog || 'No changelog provided',
+              draft: false,
+              prerelease: false
+            });
+            
+            console.log(`Created release: ${data.html_url}`);
+        env:
+          PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}
+          CHANGELOG: ${{ steps.extract-changelog.outputs.changelog }}
+          
+      - name: Find related PRs and comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.PACKAGE_VERSION;
+            const packageName = '@space48/cloud-seed';
+            const installCmd = `npm install ${packageName}@${version}`;
+            
+            // Get the commit message to find PR number
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha
+            });
+            
+            // Look for PR references in the commit message (like "Merge pull request #123")
+            const prMatch = commit.commit.message.match(/Merge pull request #(\d+)/i);
+            
+            if (prMatch && prMatch[1]) {
+              const prNumber = parseInt(prMatch[1], 10);
+              
+              // Comment on the PR
+              await github.rest.issues.createComment({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚀 New version published: **${version}**\n\nThis version has been published to npm and is now available.\n\nYou can install it with:\n\`\`\`bash\n${installCmd}\n\`\`\``
+              });
+              
+              console.log(`Commented on PR #${prNumber} about the new release ${version}`);
+            } else {
+              console.log('No PR reference found in the commit message. Skipping comment.');
+            }
+        env:
+          PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}

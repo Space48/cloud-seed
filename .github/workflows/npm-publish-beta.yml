@@ -1,0 +1,152 @@
+name: NPM Publish Beta
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  publish-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Run tests
+        run: npm run test
+
+      - name: Generate beta version
+        id: beta-version
+        run: |
+          # Get the current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Generate a timestamp for uniqueness
+          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          
+          # For PR: use PR number in version
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BETA_VERSION="$CURRENT_VERSION-beta.pr.${{ github.event.pull_request.number }}.$TIMESTAMP"
+          else
+            # For develop: use commit hash
+            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            BETA_VERSION="$CURRENT_VERSION-beta.$SHORT_SHA.$TIMESTAMP"
+          fi
+          
+          # Set output for use in next step
+          echo "version=$BETA_VERSION" >> $GITHUB_OUTPUT
+          
+          # Update package.json with new version
+          npm version $BETA_VERSION --no-git-tag-version
+        
+      - name: Publish beta to npm
+        run: npm publish --tag beta --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract changelog for unreleased
+        id: extract-changelog
+        run: |
+          # Extract changelog for the unreleased section
+          CHANGELOG_CONTENT=$(awk '
+          BEGIN { in_section = 0; }
+          /^## \[Unreleased\]/ {
+            in_section = 1; next;
+          }
+          /^## \[v/ {
+            if (in_section) { exit; }
+          }
+          in_section == 1 { print; }
+          ' CHANGELOG.md)
+          
+          # Store changelog content in output variable, handling multiline output
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Pre-release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.BETA_VERSION;
+            const changelog = process.env.CHANGELOG;
+            const eventType = process.env.GITHUB_EVENT_NAME;
+            
+            let releaseTitle, releaseTag;
+            if (eventType === 'pull_request') {
+              const prNumber = process.env.PR_NUMBER;
+              releaseTitle = `Beta Release (PR #${prNumber}): ${version}`;
+              releaseTag = `beta-pr-${prNumber}`;
+            } else {
+              const shortSha = process.env.SHORT_SHA;
+              releaseTitle = `Beta Release (${shortSha}): ${version}`;
+              releaseTag = `beta-${shortSha}`;
+            }
+            
+            // Delete existing tag if it exists
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${releaseTag}`
+              });
+              console.log(`Deleted existing tag: ${releaseTag}`);
+            } catch (error) {
+              console.log(`Tag ${releaseTag} doesn't exist or couldn't be deleted: ${error.message}`);
+            }
+            
+            // Create a new release
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: releaseTag,
+              name: releaseTitle,
+              body: `## Beta Release: ${version}\n\n` +
+                    `This is a beta release and may contain unstable features.\n\n` +
+                    `### Install with:\n\`\`\`bash\nnpm install @space48/cloud-seed@${version}\n\`\`\`\n\n` +
+                    `### Upcoming changes (from Unreleased section):\n\n${changelog || 'No unreleased changes documented.'}`,
+              draft: false,
+              prerelease: true
+            });
+            
+            console.log(`Created pre-release: ${data.html_url}`);
+        env:
+          BETA_VERSION: ${{ steps.beta-version.outputs.version }}
+          CHANGELOG: ${{ steps.extract-changelog.outputs.changelog }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHORT_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+
+      - name: Comment on PR with published version
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.BETA_VERSION;
+            const packageName = '@space48/cloud-seed';
+            const installCmd = `npm install ${packageName}@${version}`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Beta version published: **${version}**\n\nYou can install this version with:\n\`\`\`bash\n${installCmd}\n\`\`\``
+            });
+        env:
+          BETA_VERSION: ${{ steps.beta-version.outputs.version }}

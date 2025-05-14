@@ -1,0 +1,11 @@
+# Default owners for everything in the repo
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# these users will be requested for review when someone opens a PR.
+* @tgerulaitis @seanpertet @AndrewBarber @iamsambrown
+
+# Owners for specific parts of the codebase can be added below
+# Examples:
+# /docs/ @documentation-team
+# *.js @javascript-team
+# /src/core/ @core-team
