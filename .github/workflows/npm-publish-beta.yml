@@ -110,21 +110,48 @@ jobs:
               console.log(`Tag ${releaseTag} doesn't exist or couldn't be deleted: ${error.message}`);
             }
             
-            // Create a new release
-            const { data } = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: releaseTag,
-              name: releaseTitle,
-              body: `## Beta Release: ${version}\n\n` +
-                    `This is a beta release and may contain unstable features.\n\n` +
-                    `### Install with:\n\`\`\`bash\nnpm install @space48/cloud-seed@${version}\n\`\`\`\n\n` +
-                    `### Upcoming changes (from Unreleased section):\n\n${changelog || 'No unreleased changes documented.'}`,
-              draft: false,
-              prerelease: true
-            });
+            // Try to delete existing release if it exists
+            try {
+              const { data: releases } = await github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+              
+              const existingRelease = releases.find(release => release.tag_name === releaseTag);
+              if (existingRelease) {
+                console.log(`Deleting existing release with ID: ${existingRelease.id}`);
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: existingRelease.id
+                });
+              }
+            } catch (error) {
+              console.log(`Error checking/deleting existing release: ${error.message}`);
+            }
             
-            console.log(`Created pre-release: ${data.html_url}`);
+            // Create a new release
+            try {
+              const { data } = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: releaseTag,
+                name: releaseTitle,
+                body: `## Beta Release: ${version}\n\n` +
+                      `This is a beta release and may contain unstable features.\n\n` +
+                      `### Install with:\n\`\`\`bash\nnpm install @space48/cloud-seed@${version}\n\`\`\`\n\n` +
+                      `### Upcoming changes (from Unreleased section):\n\n${changelog || 'No unreleased changes documented.'}`,
+                draft: false,
+                prerelease: true
+              });
+              
+              console.log(`Created pre-release: ${data.html_url}`);
+            } catch (error) {
+              console.log(`Error creating release: ${error.message}`);
+              // Don't fail the workflow if release creation fails
+              // The npm package is still published
+            }
         env:
           BETA_VERSION: ${{ steps.beta-version.outputs.version }}
           CHANGELOG: ${{ steps.extract-changelog.outputs.changelog }}
