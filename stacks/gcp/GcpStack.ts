@@ -336,7 +336,7 @@ export default class GcpStack extends TerraformStack {
             retryPolicy,
             eventFilters: [
               {
-                attribute: "database",
+                attribute: "document",
                 value: config.document,
               },
             ],
@@ -412,9 +412,8 @@ export default class GcpStack extends TerraformStack {
         resource = "scheduled-" + config.name;
         break;
       case "firestore":
-        eventType = `providers/cloud.firestore/eventTypes/document.${
-          config.firestoreEvent || "write"
-        }`;
+        eventType = `providers/cloud.firestore/eventTypes/document.${config.firestoreEvent || "write"
+          }`;
         resource = config.document;
         break;
       case "storage":
