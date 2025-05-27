@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/Space48/cloud-seed/compare/v4.1.0...HEAD)
 
+### Fixed
+
+- Fixed an "Unsupported" error when deploying `Firestore` functions with `event trigger filter attribute` set to `database` instead of `document`
+
+## [4.1.2](https://github.com/Space48/cloud-seed/compare/v4.1.0...v4.1.2)
+
 ### Added
 
 - Added CONTRIBUTING.md with comprehensive contribution guidelines
@@ -44,7 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated package dependencies
 - Enhanced type safety for environment-specific configurations
-
 
 ## [v3.0.0](https://github.com/Space48/cloud-seed/compare/v2.1.0...v3.0.0)
 
