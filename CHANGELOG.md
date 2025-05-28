@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 
-- `Firestore` functions `event trigger filter attribute` are now set to `document` instead of `database`. Ensure you update and complete full regression testing of your firestore functions after upgrading
+- `Firestore` functions `event trigger filter attribute` now includes `database` in addition to `document`. Ensure you update and complete full regression testing of your firestore functions after upgrading
 
 ## [4.1.2](https://github.com/Space48/cloud-seed/compare/v4.1.0...v4.1.2)
 
