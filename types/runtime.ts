@@ -60,7 +60,7 @@ export type QueueConfig = {
 export type FirestoreConfig = {
   type: "firestore";
   document: string;
-  database: string;
+  database?: string;
   firestoreEvent?: "create" | "write" | "update" | "delete";
 } & FunctionConfig;
 

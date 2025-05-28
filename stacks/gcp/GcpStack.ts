@@ -341,7 +341,7 @@ export default class GcpStack extends TerraformStack {
               },
               {
                 attribute: "database",
-                value: config.database,
+                value: config.database || "(default)",
               },
             ],
           },
