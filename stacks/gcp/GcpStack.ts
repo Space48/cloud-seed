@@ -336,8 +336,12 @@ export default class GcpStack extends TerraformStack {
             retryPolicy,
             eventFilters: [
               {
-                attribute: "database",
+                attribute: "document",
                 value: config.document,
+              },
+              {
+                attribute: "database",
+                value: config.database || "(default)",
               },
             ],
           },
