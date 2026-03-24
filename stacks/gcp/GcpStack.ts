@@ -474,6 +474,7 @@ export default class GcpStack extends TerraformStack {
         ipCidrRange: vpcAccessConnectorCidrRange,
         region,
         maxInstances: 10,
+        minInstances: 2,
       });
       this.existingStaticIpVpcSubnets.push(vpcAccessConnectorCidrRange);
     }
