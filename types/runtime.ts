@@ -12,6 +12,8 @@ export type FunctionConfig = {
   memory?: number;
   retryOnFailure?: boolean;
   staticIp?: boolean;
+  vpcConnector?: string;
+  vpcConnectorEgressSettings?: "ALL_TRAFFIC" | "PRIVATE_RANGES_ONLY";
   maxInstances?: number;
   minInstances?: number;
   version?: string;

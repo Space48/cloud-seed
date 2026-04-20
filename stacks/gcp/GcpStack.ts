@@ -113,6 +113,11 @@ export default class GcpStack extends TerraformStack {
       if (func.type === "http") {
         this.configureHttpFunction(func, cloudFunc);
       }
+      if (func.vpcConnector) {
+        cloudFunc.vpcConnector = func.vpcConnector;
+        cloudFunc.vpcConnectorEgressSettings =
+          func.vpcConnectorEgressSettings ?? "PRIVATE_RANGES_ONLY";
+      }
     } else {
       cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
         name: func.name,
@@ -137,6 +142,11 @@ export default class GcpStack extends TerraformStack {
       }
       if (func.type === "scheduledJob") {
         this.configureScheduledHttpFunction2(func, cloudFunc);
+      }
+      if (func.vpcConnector) {
+        cloudFunc.serviceConfig.vpcConnector = func.vpcConnector;
+        cloudFunc.serviceConfig.vpcConnectorEgressSettings =
+          func.vpcConnectorEgressSettings ?? "PRIVATE_RANGES_ONLY";
       }
     }
 
