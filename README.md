@@ -247,9 +247,19 @@ export const runtimeConfig: GcpConfig = {
 };
 ```
 
-## VPC Connector
+## VPC Configuration
 
-If your function needs access to resources on a VPC network (e.g. a back-office service over an IPSec VPN), you can configure it to route egress traffic through a [Serverless VPC Access connector](https://cloud.google.com/vpc/docs/configure-serverless-vpc-access):
+If your function needs access to resources on a VPC network (e.g. a back-office service over an IPSec VPN), you can configure it to route egress traffic through a VPC. All VPC settings are grouped under the `vpc` key in `runtimeConfig`.
+
+> **Note:** VPC resources (connectors, networks, subnets) must already exist in your GCP project. Cloud Seed will configure the function to use them but will not create them. For gen1 functions, only the `connector` option is supported — `network` and `subnet` are ignored. For gen2 functions, if `network` or `subnet` is provided, direct VPC egress is used and the `connector` setting is ignored. Direct VPC egress requires `@cdktf/provider-google` to be built against Terraform Google provider >= 7.x.
+
+> **Note:** These options are incompatible with static IP settings. If a function is configured to use a static IP address, it won't be able to access VPN resources.
+
+### Direct VPC Egress (gen2 only)
+
+For gen2 functions, the recommended method to connect functions to a VPC is using [Direct VPC Egress](https://cloud.google.com/functions/docs/networking/direct-vpc-egress). This allows functions to directly communicate with a VPC which is cheaper and more performant than using a VPC connector. To configure direct VPC egress, provide the `vpc.network` and/or `vpc.subnet` fields.
+
+> **Note:** gen2 functions prioritise direct VPC egress over VPC connector. If both, `vpc.network`/`vpc.subnet` and `vpc.connector` are specified, the connector setting will be ignored.
 
 ```typescript
 import { HttpFunction } from "@google-cloud/functions-framework";
@@ -265,16 +275,42 @@ export const runtimeConfig: GcpConfig = {
   cloud: "gcp",
   type: "http",
   public: false,
-  // Full resource name of an existing VPC Access connector.
-  vpcConnector: "projects/my-project/locations/europe-west2/connectors/my-connector",
-  // Optional. Defaults to "PRIVATE_RANGES_ONLY". Set to "ALL_TRAFFIC" to route all egress through the connector.
-  vpcConnectorEgressSettings: "PRIVATE_RANGES_ONLY",
+  version: "gen2",
+  vpc: {
+    network: "my-vpc-network",
+    subnet: "my-vpc-subnet",
+    // Optional. Defaults to "internal_only". Set to "all_traffic" to route all egress through the connector.
+    egressSettings: "all_traffic",
+  },
 };
 ```
 
-> **Note:** The VPC Access connector must already exist in your GCP project. Cloud Seed will configure the function to use it but will not create the connector or any associated VPC/VPN resources. This option works for both gen1 and gen2 functions.
+### VPC Access Connector (gen1 or gen2 functions)
 
-> **Note:** These options are incompatible with static IP settings. If a function is configured to use a static IP address, it won't be able to access VPN resources.
+Route traffic through a [Serverless VPC Access connector](https://cloud.google.com/vpc/docs/configure-serverless-vpc-access). This works for both gen1 and gen2 functions:
+
+```typescript
+import { HttpFunction } from "@google-cloud/functions-framework";
+import type { GcpConfig } from "@space48/cloud-seed";
+
+const myFunction: HttpFunction = (req, res) => {
+  return res.sendStatus(200);
+};
+
+export default myFunction;
+
+export const runtimeConfig: GcpConfig = {
+  cloud: "gcp",
+  type: "http",
+  public: false,
+  vpc: {
+    // Full resource name of an existing VPC Access connector.
+    connector: "projects/my-project/locations/europe-west2/connectors/my-connector",
+    // Optional. Defaults to "internal_only". Set to "all_traffic" to route all egress through the connector.
+    egressSettings: "internal_only",
+  },
+};
+```
 
 ## Setting up a config file:
 

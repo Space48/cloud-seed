@@ -113,10 +113,10 @@ export default class GcpStack extends TerraformStack {
       if (func.type === "http") {
         this.configureHttpFunction(func, cloudFunc);
       }
-      if (func.vpcConnector) {
-        cloudFunc.vpcConnector = func.vpcConnector;
+      if (func.vpc?.connector) {
+        cloudFunc.vpcConnector = func.vpc.connector;
         cloudFunc.vpcConnectorEgressSettings =
-          func.vpcConnectorEgressSettings ?? "PRIVATE_RANGES_ONLY";
+          func.vpc.egressSettings === "all_traffic" ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY";
       }
     } else {
       cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
@@ -143,10 +143,21 @@ export default class GcpStack extends TerraformStack {
       if (func.type === "scheduledJob") {
         this.configureScheduledHttpFunction2(func, cloudFunc);
       }
-      if (func.vpcConnector) {
-        cloudFunc.serviceConfig.vpcConnector = func.vpcConnector;
+      if (func.vpc?.network || func.vpc?.subnet) {
+        cloudFunc.addOverride("service_config.direct_vpc_network_interface", {
+          network: func.vpc.network,
+          subnetwork: func.vpc.subnet,
+        });
+        cloudFunc.addOverride(
+          "service_config.direct_vpc_egress",
+          func.vpc.egressSettings === "all_traffic"
+            ? "VPC_EGRESS_ALL_TRAFFIC"
+            : "VPC_EGRESS_PRIVATE_RANGES_ONLY",
+        );
+      } else if (func.vpc?.connector) {
+        cloudFunc.serviceConfig.vpcConnector = func.vpc.connector;
         cloudFunc.serviceConfig.vpcConnectorEgressSettings =
-          func.vpcConnectorEgressSettings ?? "PRIVATE_RANGES_ONLY";
+          func.vpc.egressSettings === "all_traffic" ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY";
       }
     }
 
