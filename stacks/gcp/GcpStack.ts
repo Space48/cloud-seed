@@ -145,8 +145,8 @@ export default class GcpStack extends TerraformStack {
       }
       if (func.vpc?.network || func.vpc?.subnet) {
         cloudFunc.addOverride("service_config.direct_vpc_network_interface", {
-          network: func.vpc.network,
-          subnetwork: func.vpc.subnet,
+          ...(func.vpc?.network !== undefined ? { network: func.vpc.network } : {}),
+          ...(func.vpc?.subnet !== undefined ? { subnetwork: func.vpc.subnet } : {}),
         });
         cloudFunc.addOverride(
           "service_config.direct_vpc_egress",

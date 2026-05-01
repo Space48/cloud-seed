@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the ability to connect gen2 functions to a VPC using direct VPC egress
-- Added the ability to connect gen1 and gen2 functions toa VPC using a VPC connector
+- Added the ability to connect gen1 and gen2 functions to a VPC using a VPC connector
 
 ## [5.0.2](https://github.com/Space48/cloud-seed/compare/v5.0.1...v5.0.2)
 

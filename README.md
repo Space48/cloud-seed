@@ -279,7 +279,7 @@ export const runtimeConfig: GcpConfig = {
   vpc: {
     network: "my-vpc-network",
     subnet: "my-vpc-subnet",
-    // Optional. Defaults to "internal_only". Set to "all_traffic" to route all egress through the connector.
+    // Optional. Defaults to "internal_only". Set to "all_traffic" to route all egress through the VPC network.
     egressSettings: "all_traffic",
   },
 };
