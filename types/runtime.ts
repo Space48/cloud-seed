@@ -12,6 +12,12 @@ export type FunctionConfig = {
   memory?: number;
   retryOnFailure?: boolean;
   staticIp?: boolean;
+  vpc?: {
+    connector?: string;
+    network?: string;
+    subnet?: string;
+    egressSettings?: "all_traffic" | "internal_only";
+  };
   maxInstances?: number;
   minInstances?: number;
   version?: string;

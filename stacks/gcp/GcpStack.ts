@@ -46,6 +46,8 @@ export default class GcpStack extends TerraformStack {
     const functions = this.getFunctions();
 
     if (functions.length) {
+      this.validateFunctionConfigs(functions);
+
       // Configure the Archive Provider if archives need to be generated
       new archiveProvider.ArchiveProvider(this, "Archive");
       // Creates a storage bucket for the functions source to be uploaded to.
@@ -59,6 +61,39 @@ export default class GcpStack extends TerraformStack {
     }
 
     this.generateSecrets();
+  }
+
+  private validateFunctionConfigs(functions: GcpFunction[]): void {
+    const errors = functions.reduce<string[]>((errors, func) => {
+      const functionErrors = this.validateFunctionConfig(func);
+
+      if (functionErrors.length > 0) {
+        errors.push(`[${func.name}]\n\t${functionErrors.join("\n\t")}`);
+      }
+
+      return errors;
+    }, []);
+
+    if (errors.length > 0) {
+      throw new Error(`Invalid function configuration:\n\n${errors.join("\n\n")}\n`);
+    }
+  }
+
+  private validateFunctionConfig(func: GcpFunction): string[] {
+    const errors: string[] = [];
+
+    if (
+      func.staticIp !== undefined &&
+      (func.vpc?.network !== undefined ||
+        func.vpc?.subnet !== undefined ||
+        func.vpc?.connector !== undefined)
+    ) {
+      errors.push(
+        "Static IP configuration is incompatible with VPC configuration. You can only use one or the other, not both.",
+      );
+    }
+
+    return errors;
   }
 
   private generateFunction(func: GcpFunction, bucket: storageBucket.StorageBucket) {
@@ -113,6 +148,11 @@ export default class GcpStack extends TerraformStack {
       if (func.type === "http") {
         this.configureHttpFunction(func, cloudFunc);
       }
+      if (func.vpc?.connector) {
+        cloudFunc.vpcConnector = func.vpc.connector;
+        cloudFunc.vpcConnectorEgressSettings =
+          func.vpc.egressSettings === "all_traffic" ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY";
+      }
     } else {
       cloudFunc = new cloudfunctions2Function.Cloudfunctions2Function(this, func.name, {
         name: func.name,
@@ -137,6 +177,22 @@ export default class GcpStack extends TerraformStack {
       }
       if (func.type === "scheduledJob") {
         this.configureScheduledHttpFunction2(func, cloudFunc);
+      }
+      if (func.vpc?.network || func.vpc?.subnet) {
+        cloudFunc.addOverride("service_config.direct_vpc_network_interface", {
+          ...(func.vpc?.network !== undefined ? { network: func.vpc.network } : {}),
+          ...(func.vpc?.subnet !== undefined ? { subnetwork: func.vpc.subnet } : {}),
+        });
+        cloudFunc.addOverride(
+          "service_config.direct_vpc_egress",
+          func.vpc.egressSettings === "all_traffic"
+            ? "VPC_EGRESS_ALL_TRAFFIC"
+            : "VPC_EGRESS_PRIVATE_RANGES_ONLY",
+        );
+      } else if (func.vpc?.connector) {
+        cloudFunc.serviceConfig.vpcConnector = func.vpc.connector;
+        cloudFunc.serviceConfig.vpcConnectorEgressSettings =
+          func.vpc.egressSettings === "all_traffic" ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY";
       }
     }
 
