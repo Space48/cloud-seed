@@ -12,6 +12,10 @@
       "types": "./dist/providers/google.d.ts",
       "default": "./dist/providers/google.js"
     },
+    "./providers/archive": {
+      "types": "./dist/providers/archive.d.ts",
+      "default": "./dist/providers/archive.js"
+    },
     "./schemas/*": "./schemas/*"
   },
   "bin": {
@@ -40,7 +44,6 @@
   "author": "Space48 <webmaster@space48.com>",
   "license": "MIT",
   "dependencies": {
-    "@cdktf/provider-archive": "^10.3.0",
     "arg": "^5.0.2",
     "cdktf": "^0.20.10",
     "cdktf-cli": "^0.20.10",

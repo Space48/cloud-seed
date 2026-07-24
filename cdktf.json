@@ -2,7 +2,8 @@
   "language": "typescript",
   "app": "node dist/bin/entrypoint.js build --env $ENVIRONMENT",
   "terraformProviders": [
-    "hashicorp/google@7.41.0"
+    "hashicorp/google@7.41.0",
+    "hashicorp/archive@2.8.0"
   ],
   "context": {
     "excludeStackIdFromLogicalIds": "true",

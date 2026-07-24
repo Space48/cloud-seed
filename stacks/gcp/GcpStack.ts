@@ -22,7 +22,7 @@ import {
   vpcAccessConnector,
   cloudRunServiceIamMember,
 } from "../../providers/google";
-import { provider as archiveProvider, dataArchiveFile } from "@cdktf/provider-archive";
+import { provider as archiveProvider, dataArchiveFile } from "../../providers/archive";
 import { StackOptions, GcpFunction } from "./types";
 
 export default class GcpStack extends TerraformStack {

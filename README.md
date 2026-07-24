@@ -425,6 +425,10 @@ The generated Google provider bindings are exported from
 additional infrastructure without running `cdktf provider add`. Cloud Seed currently generates
 them from Terraform Google provider `7.41.0`; the Terraform provider is downloaded during the
 normal `terraform init` step.
+
+The generated Archive provider bindings are similarly exported from
+`@space48/cloud-seed/providers/archive`. They are generated from Terraform Archive provider
+`2.8.0`.
 # Cloud functions gen 2
 It is recommended by google to use the [gen 2](https://cloud.google.com/functions/docs/concepts/version-comparison) functions wherever possible.
 
