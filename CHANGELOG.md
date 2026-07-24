@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0](https://github.com/Space48/cloud-seed/compare/v5.1.0...v5.2.0)
+
+### Added
+
+- Google provider bindings are now exported as @space48/cloud-seed/providers/google
+- Archive provider bindings are now exported as @space48/cloud-seed/providers/archive
+
+### Changed
+
+- Replaced prebuilt @cdktf/provider-google and @cdktf/provider-archive providers, which were no longer supported, with locally generated bindings
+- Google provider upgraded to 7.41.0
+- Archive provider upgraded to 2.8.0
+
+### Fixed
+
+- Fixed functions retaining their direct VPC egress configuration after the vpc configuration is removed in runtimeConfig
+
 ## [5.1.0](https://github.com/Space48/cloud-seed/compare/v5.0.2...v5.1.0)
 
 ### Added
