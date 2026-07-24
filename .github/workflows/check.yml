@@ -11,6 +11,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '20.x'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.8'
+
       - name: Install
         run: npm ci
       - name: Build

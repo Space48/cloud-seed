@@ -251,7 +251,7 @@ export const runtimeConfig: GcpConfig = {
 
 If your function needs access to resources on a VPC network (e.g. a back-office service over an IPSec VPN), you can configure it to route egress traffic through a VPC. All VPC settings are grouped under the `vpc` key in `runtimeConfig`.
 
-> **Note:** VPC resources (connectors, networks, subnets) must already exist in your GCP project. Cloud Seed will configure the function to use them but will not create them. For gen1 functions, only the `connector` option is supported — `network` and `subnet` are ignored. For gen2 functions, if `network` or `subnet` is provided, direct VPC egress is used and the `connector` setting is ignored. Direct VPC egress requires `@cdktf/provider-google` to be built against Terraform Google provider >= 7.x.
+> **Note:** VPC resources (connectors, networks, subnets) must already exist in your GCP project. Cloud Seed will configure the function to use them but will not create them. For gen1 functions, only the `connector` option is supported — `network` and `subnet` are ignored. For gen2 functions, if `network` or `subnet` is provided, direct VPC egress is used and the `connector` setting is ignored. Direct VPC egress uses the generated Google provider bindings included with this package.
 
 > **Note:** These options are incompatible with static IP settings. If a function is configured to use a static IP address, it won't be able to access VPN resources.
 
@@ -384,7 +384,7 @@ This package can also be called via a JS API.
 
 ```typescript
 import { build, BaseConfig } from "@space48/cloud-seed";
-import GoogleProvider from "@cdktf/provider-google";
+import { provider as GoogleProvider, storageBucket } from "@space48/cloud-seed/providers/google";
 import { GcsBackend, TerraformStack } from "cdktf";
 import { Construct } from "constructs";
 
@@ -403,7 +403,7 @@ class CustomStack extends TerraformStack {
     /**
      * Example infrastructure
      */
-    new GoogleProvider.StorageBucket(this, "CustomBucket", {
+    new storageBucket.StorageBucket(this, "CustomBucket", {
       name: `my-custom-bucket-${process.env.ENVIRONMENT}`,
       location: options.cloud.gcp.region.toUpperCase(),
       storageClass: "STANDARD",
@@ -419,6 +419,12 @@ new CustomStack(app, "CustomStack", config);
 
 app.synth();
 ```
+
+The generated Google provider bindings are exported from
+`@space48/cloud-seed/providers/google`. Consumer applications can use these bindings for
+additional infrastructure without running `cdktf provider add`. Cloud Seed currently generates
+them from Terraform Google provider `7.41.0`; the Terraform provider is downloaded during the
+normal `terraform init` step.
 # Cloud functions gen 2
 It is recommended by google to use the [gen 2](https://cloud.google.com/functions/docs/concepts/version-comparison) functions wherever possible.
 
