@@ -21,8 +21,8 @@ import {
   storageBucketObject,
   vpcAccessConnector,
   cloudRunServiceIamMember,
-} from "@cdktf/provider-google";
-import { provider as archiveProvider, dataArchiveFile } from "@cdktf/provider-archive";
+} from "../../providers/google";
+import { provider as archiveProvider, dataArchiveFile } from "../../providers/archive";
 import { StackOptions, GcpFunction } from "./types";
 
 export default class GcpStack extends TerraformStack {
@@ -168,6 +168,28 @@ export default class GcpStack extends TerraformStack {
           maxInstanceCount: func.maxInstances,
           minInstanceCount: func.minInstances,
           environmentVariables,
+          ...(func.vpc?.network || func.vpc?.subnet
+            ? {
+                directVpcNetworkInterface: [
+                  {
+                    ...(func.vpc.network !== undefined ? { network: func.vpc.network } : {}),
+                    ...(func.vpc.subnet !== undefined ? { subnetwork: func.vpc.subnet } : {}),
+                  },
+                ],
+                directVpcEgress:
+                  func.vpc.egressSettings === "all_traffic"
+                    ? "VPC_EGRESS_ALL_TRAFFIC"
+                    : "VPC_EGRESS_PRIVATE_RANGES_ONLY",
+              }
+            : func.vpc?.connector
+              ? {
+                  vpcConnector: func.vpc.connector,
+                  vpcConnectorEgressSettings:
+                    func.vpc.egressSettings === "all_traffic"
+                      ? "ALL_TRAFFIC"
+                      : "PRIVATE_RANGES_ONLY",
+                }
+              : {}),
         },
         location: this.options.gcpOptions.region,
         ...this.generateFunction2TriggerConfig(func, scheduledTopic),
@@ -177,22 +199,6 @@ export default class GcpStack extends TerraformStack {
       }
       if (func.type === "scheduledJob") {
         this.configureScheduledHttpFunction2(func, cloudFunc);
-      }
-      if (func.vpc?.network || func.vpc?.subnet) {
-        cloudFunc.addOverride("service_config.direct_vpc_network_interface", {
-          ...(func.vpc?.network !== undefined ? { network: func.vpc.network } : {}),
-          ...(func.vpc?.subnet !== undefined ? { subnetwork: func.vpc.subnet } : {}),
-        });
-        cloudFunc.addOverride(
-          "service_config.direct_vpc_egress",
-          func.vpc.egressSettings === "all_traffic"
-            ? "VPC_EGRESS_ALL_TRAFFIC"
-            : "VPC_EGRESS_PRIVATE_RANGES_ONLY",
-        );
-      } else if (func.vpc?.connector) {
-        cloudFunc.serviceConfig.vpcConnector = func.vpc.connector;
-        cloudFunc.serviceConfig.vpcConnectorEgressSettings =
-          func.vpc.egressSettings === "all_traffic" ? "ALL_TRAFFIC" : "PRIVATE_RANGES_ONLY";
       }
     }
 
