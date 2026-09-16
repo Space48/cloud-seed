@@ -20,6 +20,7 @@ export type FunctionConfig = {
   };
   maxInstances?: number;
   minInstances?: number;
+  requestConcurrency?: number;
   version?: string;
 };
 
