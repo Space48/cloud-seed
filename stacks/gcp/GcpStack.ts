@@ -167,6 +167,7 @@ export default class GcpStack extends TerraformStack {
           timeoutSeconds: func.timeout ?? 60,
           maxInstanceCount: func.maxInstances,
           minInstanceCount: func.minInstances,
+          maxInstanceRequestConcurrency: func.requestConcurrency,
           environmentVariables,
           ...(func.vpc?.network || func.vpc?.subnet
             ? {
