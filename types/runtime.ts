@@ -10,6 +10,7 @@ export type FunctionConfig = {
   timeout?: number;
   runtime: string;
   memory?: number;
+  cpu?: string;
   retryOnFailure?: boolean;
   staticIp?: boolean;
   vpc?: {
