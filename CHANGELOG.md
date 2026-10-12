@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added support for configuring `availableCpu`.
+- Added support for configuring `availableCpu`. Requires values set as per https://docs.cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum
 
 ## [5.3.0](https://github.com/Space48/cloud-seed/compare/v5.2.0...v5.3.0)
 
