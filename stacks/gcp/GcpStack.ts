@@ -164,7 +164,7 @@ export default class GcpStack extends TerraformStack {
         },
         serviceConfig: {
           availableMemory: func.memory?.toString().concat("M") ?? "256M",
-          availableCpu: func.cpu ?? "1",
+          availableCpu: func.cpu,
           timeoutSeconds: func.timeout ?? 60,
           maxInstanceCount: func.maxInstances,
           minInstanceCount: func.minInstances,
